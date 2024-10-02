@@ -1,0 +1,65 @@
+#include <iostream>
+// Para el hash
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <cmath> 
+
+// Para el display de la imagen
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp> 
+
+using namespace cv;
+using namespace std;
+
+// Funcion para generar un hash 
+unsigned long long improvedImageHash(const string& imagePath) {
+    // Cargar la imagen usando opencv
+    Mat image = imread(imagePath, IMREAD_COLOR);
+
+    // Verificar si la imagen funciona 
+    if (image.empty()) {
+        cout << "Error: No se pudo cargar la imagen." << endl;
+        return 0;
+    }
+
+    unsigned long long hash = 0;  // Usamos un hash de 64 bits para mayor capacidad
+    const unsigned long long prime = 31; // Constante prima para mejorar la dispersion
+
+    // Recorrer cada pixel y realizar una operación mas compleja sobre los valores RGB
+    for (int row = 0; row < image.rows; ++row) {
+        for (int col = 0; col < image.cols; ++col) {
+            // Obtener el valor del pixel (BGR en OpenCV)
+            Vec3b pixel = image.at<Vec3b>(row, col);
+
+            // Realizar operaciones sobre los canales B, G, R para mezclar los valores
+            unsigned long long pixelValue = (pixel[0] * prime) ^ (pixel[1] << 8) ^ (pixel[2] << 16);
+
+            // Sumar el valor del pixel al hash usando operaciones de desplazamiento y XOR
+            hash = (hash * prime) + (pixelValue ^ (pixelValue >> 3) ^ (pixelValue << 7));
+
+            // Operacion adicional para mejorar la dispersión
+            hash = hash ^ (hash >> 13);
+        }   
+    }
+
+    return hash;
+}
+
+int main() {
+    string imagePath = "C:\\Users\\mendi\\Downloads\\RobloxScreenShot20240813_111609942.jpg"; 
+    unsigned long long imageHash = improvedImageHash(imagePath);
+
+    if (imageHash != 0) {
+        cout << "El hash de la imagen es: " << hex << imageHash << endl;
+    }
+
+    Mat img = cv::imread("C:\\Users\\mendi\\Downloads\\RobloxScreenShot20240813_111609942.jpg");
+    namedWindow("Ventana", WINDOW_AUTOSIZE);
+    imshow("Ventana", img);
+    moveWindow("Ventana", 0, 45);
+    waitKey(0);
+    destroyAllWindows();
+
+    return 0;
+}
