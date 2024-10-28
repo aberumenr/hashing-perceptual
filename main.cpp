@@ -23,28 +23,28 @@ unsigned long long improvedImageHash(const string& imagePath) {
     // Cargar la imagen usando opencv
     Mat image = imread(imagePath, IMREAD_COLOR);
 
-    // Verificar si la imagen se cargó
+    // Verificar si la imagen se cargÃ³
     if (image.empty()) {
         cout << "Error: No se pudo cargar la imagen." << endl;
         return 0;
     }
 
     unsigned long long hash = 0;  // Usamos un hash de 64 bits para mayor capacidad
-    const unsigned long long prime = 31; // Constante prima para mejorar la dispersión
+    const unsigned long long prime = 31; // Constante prima para mejorar la dispersiÃ³n
 
-    // Recorrer cada píxel y realizar una operación sobre los valores RGB
+    // Recorrer cada pÃ­xel y realizar una operaciÃ³n sobre los valores RGB
     for (int row = 0; row < image.rows; ++row) {
         for (int col = 0; col < image.cols; ++col) {
-            // Obtener el valor del píxel (BGR en OpenCV)
+            // Obtener el valor del pÃ­xel (BGR en OpenCV)
             Vec3b pixel = image.at<Vec3b>(row, col);
 
             // Realizar operaciones sobre los canales B, G, R para mezclar los valores
             unsigned long long pixelValue = (pixel[0] * prime) ^ (pixel[1] << 8) ^ (pixel[2] << 16);
 
-            // Sumar el valor del píxel al hash usando operaciones de desplazamiento y XOR
+            // Sumar el valor del pÃ­xel al hash usando operaciones de desplazamiento y XOR
             hash = (hash * prime) + (pixelValue ^ (pixelValue >> 3) ^ (pixelValue << 7));
 
-            // Operación adicional para mejorar la dispersión
+            // OperaciÃ³n adicional para mejorar la dispersiÃ³n
             hash = hash ^ (hash >> 13);
         }
     }
@@ -76,7 +76,7 @@ public:
     // Insertar un hash en la tabla
     void insert(unsigned long long hashValue) {
         int index = hashValue % TABLE_SIZE;
-        table[index].push_back(hashValue);  // Añadir a la lista en esa posición
+        table[index].push_back(hashValue);  // AÃ±adir a la lista en esa posiciÃ³n
     }
 
     // Buscar un hash en la tabla
@@ -105,10 +105,10 @@ int main() {
 
         //se calcula la distancia de hamming entre los hashes de las dos imagenes
         int distancia = hammingDistance(imageHash1, imageHash2);
-        cout << "Distancia de Hamming entre las imágenes: " << distancia << endl;
+        cout << "Distancia de Hamming entre las imagenes: " << distancia << endl;
 
         if (distancia == 0) {
-            cout << "Las imagenes son idénticas." << endl;
+            cout << "Las imagenes son identicas." << endl;
         }
         else {
             cout << "Las imagenes son diferentes." << endl;
@@ -123,7 +123,7 @@ int main() {
             cout << "Hash de la primera imagen insertado en la tabla." << endl;
         }
         else {
-            cout << "Colisión detectada: el hash de la primera imagen ya existe en la tabla." << endl;
+            cout << "Colision detectada: el hash de la primera imagen ya existe en la tabla." << endl;
         }
     }
 
