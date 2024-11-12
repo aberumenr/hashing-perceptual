@@ -1,9 +1,5 @@
 #include "interface.h"
 
-sf::RenderWindow* createTab() {
-    return new sf::RenderWindow(sf::VideoMode(800, 600), "ventana principal", sf::Style::Close | sf::Style::Resize);
-}
-
 sf::Texture loadImage(const cv::Mat& image) {
     sf::Texture texture;
 
@@ -57,7 +53,7 @@ std::pair<sf::RectangleShape, sf::Text> agregarBotonRect(
 ) {
     sf::RectangleShape button(size);
     button.setPosition(position);
-    button.setFillColor(sf::Color(106, 142, 250));
+    button.setFillColor(sf::Color(106, 142, 250, 0));
 
     sf::Text buttonText;
     buttonText.setFont(font);
@@ -81,7 +77,7 @@ std::pair<sf::CircleShape, sf::Text> agregarBotonCirc(
 ) {
     sf::CircleShape button(radius);
     button.setPosition(position);
-    button.setFillColor(sf::Color(106, 142, 250));  //color del boton
+    button.setFillColor(sf::Color(106, 142, 250, 0));  //color del boton
 
     sf::Text buttonText;
     buttonText.setFont(font);
@@ -99,21 +95,32 @@ std::pair<sf::CircleShape, sf::Text> agregarBotonCirc(
     return { button, buttonText };
 }
 
+sf::RenderWindow* createTab() {
+    //tamaño fijo ventana
+    return new sf::RenderWindow(sf::VideoMode(1366, 768), "Ventana principal", sf::Style::Titlebar | sf::Style::Close);
+}
 
 void runInterface(const std::string& imagePath1, const std::string& imagePath2) {
     sf::RenderWindow* window = createTab();
+ 
+    //imagen de fondo 
+    sf::Texture backgroundTexture;
+    if (!backgroundTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\main menu.png")) { //aqui va el path a la imagen
+        std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+    }
+    sf::Sprite backgroundSprite(backgroundTexture);
 
     //font para los botones
     sf::Font font;
     if (!font.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\font\\Nexa-Heavy.ttf")) { //aqui ponen el path del archivo ttf
-        std::cerr << "Error loading font!" << std::endl;
+        std::cerr << "Error cargando fuente" << std::endl;
     }
 
     //creacion de botones
-    auto subirImagenButton = agregarBotonRect({ 300, 350 }, { 200, 50 }, "Subir Imagen", font);
-    auto buscarButton = agregarBotonRect({ 300, 420 }, { 200, 50 }, "Buscar", font);
-    auto guardadosButton = agregarBotonRect({ 300, 490 }, { 200, 50 }, "Guardados", font);
-    auto helpButton = agregarBotonCirc({ 725, 30 }, { 20 }, "?", font);
+    auto subirImagenButton = agregarBotonRect({ 244.8, 293.9 }, { 270.8, 61.5 }, " ", font);
+    auto buscarButton = agregarBotonRect({ 244.8, 365.8 }, { 270.8, 61.5 }, " ", font);
+    auto guardadosButton = agregarBotonRect({ 244.8, 437.7 }, { 270.8, 61.5 }, " ", font);
+    auto ayudaButton = agregarBotonCirc({ 1220, 90 }, { 35 }, " ", font);
 
     cv::Mat image1 = cv::imread(imagePath1);
     sf::Texture texture1 = loadImage(image1);
@@ -121,6 +128,20 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
     cv::Mat image2 = cv::imread(imagePath2);
     sf::Texture texture2 = loadImage(image2);
     sf::Sprite sprite2(texture2);
+
+    sf::Text mensajeAyuda;
+    mensajeAyuda.setFont(font);
+    //este es el mensaje de ayuda que podran leer los usuarios
+    mensajeAyuda.setString("El sistema te permite buscar im�genes mediante comparaci�n\n"
+        "con las im�genes del programa o puedes cargar las tuyas.\n"
+        "Usa los botones para realizar acciones como Subir Imagen,\n"
+        "Buscar o acceder a las im�genes Guardadas.");
+    mensajeAyuda.setCharacterSize(14);
+    mensajeAyuda.setFillColor(sf::Color::Black);
+    mensajeAyuda.setPosition(0, 25); // ajusta la posici�n del mensaje
+
+    //si es verdadero se mostrara el mensaje
+    bool mostrarMensaje = false;
 
     auto resizePics = [&](sf::Vector2u windowSize) {
         float maxWidth = static_cast<float>(windowSize.x) / 2;
@@ -146,19 +167,56 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
             }
 
             if (event.type == sf::Event::Resized) {
-                resizePics(window->getSize());
+                sf::Vector2u newSize = window->getSize();
+            }
+
+
+            //se inicia la funcion para que se detecte que los botones funcionan
+            //el mensaje de cout se va a quitar por ahorita es para comprobar que si funciona el clic
+            if (event.type == sf::Event::MouseButtonPressed) {
+                if (event.mouseButton.button == sf::Mouse::Left) {
+                    // busca las coordenadas del mouse en la ventana
+                    sf::Vector2f mousePos = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
+
+                    if (subirImagenButton.first.getGlobalBounds().contains(mousePos)) {
+                        std::cout << "Clic a boton Subir Imagen." << std::endl;
+                        // aqui se le agrega una ventana para subir la imagen que quiere el usuario
+                    }
+
+                    else if (buscarButton.first.getGlobalBounds().contains(mousePos)) {
+                        std::cout << "Clic a boton Buscar." << std::endl;
+                        // aqui se le agrega una ventana para buscar la imagen que quiere el usuario
+                        
+                        //se dibujan las imagenes
+                        if (sprite1.getTexture()) {
+                            window->draw(sprite1);
+                        }
+                        if (sprite2.getTexture()) {
+                            window->draw(sprite2);
+                        }
+                    }
+
+                    else if (guardadosButton.first.getGlobalBounds().contains(mousePos)) {
+                        std::cout << "Clic a boton Guardados." << std::endl;
+                        // aqui se le agrega una ventana donde se muestren las imagenes que ya ha guardado el usuario anteriormente
+                    }
+
+                    else if (ayudaButton.first.getGlobalBounds().contains(mousePos)) {
+                        std::cout << "Clic a boton ayuda." << std::endl;
+                        mostrarMensaje = !mostrarMensaje; // se hace la accion de mostrar/ocultar el mensaje de ayuda
+                    }
+                    else {
+                        mostrarMensaje = false;
+                    }
+                }
             }
         }
 
         window->clear(sf::Color::White);
 
-        /*//se dibujan las imagenes
-        if (sprite1.getTexture()) {
-            window->draw(sprite1);
-        }
-        if (sprite2.getTexture()) {
-            window->draw(sprite2);
-        }*/
+        //se dibuja el fondo
+        window->draw(backgroundSprite);
+
 
         //se dibujan los botones
         window->draw(subirImagenButton.first); //la figura
@@ -167,8 +225,13 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
         window->draw(buscarButton.second);
         window->draw(guardadosButton.first);
         window->draw(guardadosButton.second);
-        window->draw(helpButton.first);
-        window->draw(helpButton.second);
+        window->draw(ayudaButton.first);
+        window->draw(ayudaButton.second);
+
+        //se crea una ventana para poder mostrar el mensaje de ayuda para el usuario
+        if (mostrarMensaje) {
+            window->draw(mensajeAyuda);
+        }
 
         window->display();
     }
