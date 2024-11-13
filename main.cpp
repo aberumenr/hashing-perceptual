@@ -1,141 +1,136 @@
-// main.cpp
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <list>
+#include <cmath>
+#include <SFML/Graphics.hpp>
+#include <filesystem>
+#include <fstream>
 
-// Copyright (c) Microsoft Open Technologies, Inc.
-// All rights reserved.
-//
-// (3 - clause BSD License)
-//
-// Redistribution and use in source and binary forms, with or without modification, are permitted provided that
-// the following conditions are met:
-//
-// 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the
-// following disclaimer.
-// 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
-// following disclaimer in the documentation and/or other materials provided with the distribution.
-// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or
-// promote products derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-// PARTICULAR PURPOSE ARE DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT(INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
 
-#include "pch.h"
-
+// Para el display de la imagen
 #include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/objdetect.hpp>
-#include <opencv2/features2d.hpp>
-#include <opencv2/videoio.hpp>
-#include <opencv2/videoio/cap_winrt.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
 
-// Switch definitions below to apply different filters
-// TODO: add UX controls to manipulate filters at runtime
-
-//#define COLOR
-#define CANNY
-//#define FACES
+#include "interface.h"
 
 using namespace cv;
+using namespace std;
 
-namespace video_capture_xaml {
+const int TABLE_SIZE = 10007;  // num primo grande para la tabla hash
 
-    // forward declaration
-    void cvFilterColor(Mat &frame);
-    void cvFilterCanny(Mat &frame);
-    void cvDetectFaces(Mat &frame);
 
-    CascadeClassifier face_cascade;
-    String face_cascade_name = "Assets/haarcascade_frontalface_alt.xml";
+// Funcion para generar un hash
+unsigned long long improvedImageHash(const string& imagePath) {
+    // Cargar la imagen usando opencv
+    Mat image = imread(imagePath, IMREAD_COLOR);
 
-    void cvMain()
-    {
-        //initializing frame counter used by face detection logic
-        long frameCounter = 0;
+    // Verificar si la imagen se cargó
+    if (image.empty()) {
+        cout << "Error: No se pudo cargar la imagen." << endl;
+        return 0;
+    }
 
-        // loading classifier for face detection
-        face_cascade.load(face_cascade_name);
+    unsigned long long hash = 0;  // Usamos un hash de 64 bits para mayor capacidad
+    const unsigned long long prime = 31; // Constante prima para mejorar la dispersión
 
-        // open the default camera
-        VideoCapture cam;
-        cam.open(0);
+    // Recorrer cada píxel y realizar una operación sobre los valores RGB
+    for (int row = 0; row < image.rows; ++row) {
+        for (int col = 0; col < image.cols; ++col) {
+            // Obtener el valor del píxel (BGR en OpenCV)
+            Vec3b pixel = image.at<Vec3b>(row, col);
 
-        Mat frame;
+            // Realizar operaciones sobre los canales B, G, R para mezclar los valores
+            unsigned long long pixelValue = (pixel[0] * prime) ^ (pixel[1] << 8) ^ (pixel[2] << 16);
 
-        // process frames
-        while (1)
-        {
-            // get a new frame from camera - this is non-blocking per spec
-            cam >> frame;
-            frameCounter++;
+            // Sumar el valor del píxel al hash usando operaciones de desplazamiento y XOR
+            hash = (hash * prime) + (pixelValue ^ (pixelValue >> 3) ^ (pixelValue << 7));
 
-            // don't reprocess the same frame again
-            // if commented then flashing may occur
-            if (!cam.grab()) continue;
+            // Operación adicional para mejorar la dispersión
+            hash = hash ^ (hash >> 13);
+        }
+    }
 
-            // image processing calculations here
-            // Mat frame is in RGB24 format (8UC3)
+    return hash;
+}
 
-            // select processing type
-    #if defined COLOR
-            cvFilterColor(frame);
-    #elif defined CANNY
-            cvFilterCanny(frame);
-    #elif defined FACES
-            // processing every other frame to reduce the load
-            if (frameCounter % 2 == 0) {
-                cvDetectFaces(frame);
+int hammingDistance(unsigned long long hash1, unsigned long long hash2) {
+    unsigned long long res = hash1 ^ hash2;
+    int distancia = 0;
+
+    // Contar los bits diferentes
+    while (res != 0) {
+        distancia += res & 1; // Incrementar si el bit menos significativo es 1
+        res >>= 1; // Desplazar a la derecha
+    }
+
+    return distancia;
+}
+
+
+// se crea la tabla hash para prevenir las colisiones de hashing por chaining
+class HashTable {
+    vector<list<unsigned long long>> table;
+
+public:
+    HashTable(int size) : table(size) {}
+
+    // Insertar un hash en la tabla
+    void insert(unsigned long long hashValue) {
+        int index = hashValue % TABLE_SIZE;
+        table[index].push_back(hashValue);  // Añadir a la lista en esa posición
+    }
+
+    // Buscar un hash en la tabla
+    bool search(unsigned long long hashValue) {
+        int index = hashValue % TABLE_SIZE;
+        for (auto& h : table[index]) {
+            if (h == hashValue) {
+                return true;  // Hash encontrado
             }
-    #endif
+        }
+        return false;  // No encontrado
+    }
+};
 
-            // important step to get XAML image component updated
-            winrt_imshow();
+int main() {
+    string imagePath1 = "C:\\Users\\alexa\\OneDrive\\Pictures\\Roblox\\RobloxScreenShot20231129_222148820.png";
+    string imagePath2 = "C:\\Users\\alexa\\OneDrive\\Pictures\\Roblox\\RobloxScreenShot20231129_222148820.png";
+
+    //calcular de manera individual los hashes de las imagenes
+    unsigned long long imageHash1 = improvedImageHash(imagePath1);
+    unsigned long long imageHash2 = improvedImageHash(imagePath2);
+
+    if (imageHash1 != 0 && imageHash2 != 0) {
+        cout << "Hash de la primera imagen: " << hex << imageHash1 << endl;
+        cout << "Hash de la segunda imagen: " << hex << imageHash2 << endl;
+
+        //se calcula la distancia de hamming entre los hashes de las dos imagenes
+        int distancia = hammingDistance(imageHash1, imageHash2);
+        cout << "Distancia de Hamming entre las imágenes: " << distancia << endl;
+
+        if (distancia == 0) {
+            cout << "Las imagenes son idénticas." << endl;
+        }
+        else {
+            cout << "Las imagenes son diferentes." << endl;
+        }
+
+        // Crear la tabla hash
+        HashTable hashTable(TABLE_SIZE);
+
+        // Insertar el hash de la primera imagen en la tabla
+        if (!hashTable.search(imageHash1)) {
+            hashTable.insert(imageHash1);
+            cout << "Hash de la primera imagen insertado en la tabla." << endl;
+        }
+        else {
+            cout << "Colisión detectada: el hash de la primera imagen ya existe en la tabla." << endl;
         }
     }
 
-    // image processing example #1
-    // write color bar at row 100 for 200 rows
-    void cvFilterColor(Mat &frame)
-    {
-        auto ar = frame.ptr(100);
-        int bytesPerPixel = 3;
-        int adjust = (int)(((float)30 / 100.0f) * 255.0);
-        for (int i = 0; i < 640 * 100 * bytesPerPixel;)
-        {
-            ar[i++] = adjust;           // R
-            i++;                        // G
-            ar[i++] = 255 - adjust;     // B
-        }
-    }
+    runInterface(imagePath1, imagePath2);
 
-    // image processing example #2
-    // apply edge detection aka 'canny' filter
-    void cvFilterCanny(Mat &frame)
-    {
-        Mat edges;
-        cvtColor(frame, edges, COLOR_RGB2GRAY);
-        GaussianBlur(edges, edges, Size(7, 7), 1.5, 1.5);
-        Canny(edges, edges, 0, 30, 3);
-        cvtColor(edges, frame, COLOR_GRAY2RGB);
-    }
-
-    // image processing example #3
-    // detect human faces
-    void cvDetectFaces(Mat &frame)
-    {
-        Mat faces;
-        std::vector<cv::Rect> facesColl;
-        cvtColor(frame, faces, COLOR_RGB2GRAY);
-        equalizeHist(faces, faces);
-        face_cascade.detectMultiScale(faces, facesColl, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(1, 1));
-        for (unsigned int i = 0; i < facesColl.size(); i++)
-        {
-            auto face = facesColl[i];
-            cv::rectangle(frame, face, cv::Scalar(0, 255, 255), 3);
-        }
-    }
+    return 0;
 }
