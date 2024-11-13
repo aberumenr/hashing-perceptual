@@ -1,8 +1,11 @@
 #include "interface.h"
 #include "tinyfiledialogs.h"
+#include <windows.h>
+#include <shellapi.h>
 
 namespace fs = std::filesystem;
 
+//para folder Mis Imagenes
 bool saveImageToFolder(const cv::Mat& image, const std::string& fileName) {
     std::string folderPath = "Mis Imagenes";
 
@@ -118,7 +121,7 @@ sf::RenderWindow* createTab() {
 
 void runInterface(const std::string& imagePath1, const std::string& imagePath2) {
     sf::RenderWindow* window = createTab();
- 
+
     //imagen de fondo 
     sf::Texture menuTexture;
     if (!menuTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\main menu.png")) { //aqui va el path a la imagen
@@ -198,7 +201,10 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         // aqui se le agrega una ventana para subir la imagen que quiere el usuario
                         sf::RenderWindow* subirImagen = createTab();
 
+                        
+
                         auto uploadButton = agregarBotonRect({ 861.7, 490.6 }, { 226.8, 46.5 }, " ", font);
+                        auto dragWindow = agregarBotonRect({ 743.9, 176.6 }, { 462.3, 201.8 }, " ", font);
 
                         //imagen de fondo 
                         sf::Texture subirTexture;
@@ -210,7 +216,7 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         //aqui se guardan la textura y sprite de la imagen subida
                         sf::Texture uploadedTexture;
                         sf::Sprite uploadedSprite;
-                        bool imageUploaded = false; 
+                        bool imageUploaded = false;
 
                         //mensajito
                         sf::Text successMessage;
@@ -220,13 +226,20 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         successMessage.setFillColor(sf::Color::Black);
                         successMessage.setPosition(278.3, 331.9);
 
+                        //para ver si arrastra el mouse
+                        bool isDragging = false;
+                        std::string droppedFilePath;
+
                         while (subirImagen->isOpen()) {
+                            DragAcceptFiles(subirImagen->getSystemHandle(), TRUE);
+
                             sf::Event subirAbierto;
 
                             while (subirImagen->pollEvent(subirAbierto)) {
                                 if (subirAbierto.type == sf::Event::Closed) {
                                     subirImagen->close();
                                 }
+
                                 if (subirAbierto.type == sf::Event::MouseButtonPressed &&
                                     subirAbierto.mouseButton.button == sf::Mouse::Left) {
                                     sf::Vector2f mouseClickPos(subirAbierto.mouseButton.x, subirAbierto.mouseButton.y);
@@ -239,6 +252,7 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                         if (filePath) {
                                             std::cout << "Archivo seleccionado: " << filePath << std::endl;
                                             cv::Mat uploadedImage = cv::imread(filePath);
+
                                             if (uploadedImage.empty()) {
                                                 std::cerr << "Error al cargar la imagen seleccionada." << std::endl;
                                             }
@@ -246,6 +260,7 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                                 //se guarda el nombre original
                                                 std::filesystem::path pathObj(filePath);
                                                 std::string fileName = pathObj.filename().string();
+
                                                 //se guarda la foto en folder
                                                 if (saveImageToFolder(uploadedImage, fileName)) {
                                                     imageUploaded = true;
@@ -259,11 +274,56 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                             std::cout << "No se selecciono ningun archivo." << std::endl;
                                         }
                                     }
+
+                                    //si esta en el area de arrastrar
+                                    if (dragWindow.first.getGlobalBounds().contains(mouseClickPos)) {
+                                        isDragging = true;
+                                    }
                                 }
+                               
                             }
+
+                            //ver los mensajes y actividad direcrtamente de Windows
+                            MSG msg;
+                            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+                                std::cout << "Processing Windows message: " << msg.message << std::endl;
+                                if (msg.message == WM_DROPFILES) {
+                                    std::cout << "WM_DROPFILES detected" << std::endl;
+                                    HDROP hDrop = (HDROP)msg.wParam;
+                                    char filePath[MAX_PATH];
+
+                                    if (DragQueryFileA(hDrop, 0, filePath, MAX_PATH)) {
+                                        std::cout << "Archivo arrastrado: " << filePath << std::endl;
+                                        cv::Mat uploadedImage = cv::imread(filePath);
+
+                                        if (!uploadedImage.empty()) {
+                                            std::cout << "Imagen cargada exitosamente." << std::endl;
+                                            std::filesystem::path pathObj(filePath);
+                                            std::string fileName = pathObj.filename().string();
+
+                                            if (saveImageToFolder(uploadedImage, fileName)) {
+                                                std::cout << "Imagen guardada exitosamente en la carpeta." << std::endl;
+                                                imageUploaded = true;
+                                            }
+                                            else {
+                                                std::cerr << "Error al guardar la imagen." << std::endl;
+                                            }
+                                        }
+                                        else {
+                                            std::cerr << "Error al cargar la imagen arrastrada." << std::endl;
+                                        }
+                                    }
+
+                                    DragFinish(hDrop);
+                                }
+                                TranslateMessage(&msg);
+                                DispatchMessage(&msg);
+                            }
+
                             subirImagen->clear(sf::Color::White);
                             subirImagen->draw(subirSprite);
                             subirImagen->draw(uploadButton.first);
+                            subirImagen->draw(dragWindow.first);
 
                             if (imageUploaded) {
                                 subirImagen->draw(successMessage);
@@ -272,8 +332,10 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                             subirImagen->display();
                         }
 
-                    } 
-                    
+
+
+
+                    }
                     else if (buscarButton.first.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Clic a boton Buscar." << std::endl;
                         // aqui se le agrega una ventana para buscar la imagen que quiere el usuario
