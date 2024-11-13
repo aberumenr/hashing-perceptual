@@ -1,9 +1,7 @@
 #include "interface.h"
 #include "tinyfiledialogs.h"
-#include <filesystem>
-#include <fstream>
 
-/*namespace fs = std::filesystem;
+namespace fs = std::filesystem;
 
 bool saveImageToFolder(const cv::Mat& image, const std::string& fileName) {
     std::string folderPath = "Mis Imagenes";
@@ -15,7 +13,7 @@ bool saveImageToFolder(const cv::Mat& image, const std::string& fileName) {
 
     std::string filePath = folderPath + "/" + fileName;
     return cv::imwrite(filePath, image);
-}*/
+}
 
 
 sf::Texture loadImage(const cv::Mat& image) {
@@ -217,10 +215,10 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         //mensajito
                         sf::Text successMessage;
                         successMessage.setFont(font);
-                        successMessage.setString("Tu imagen se subio exitosamente!");
-                        successMessage.setCharacterSize(24);
-                        successMessage.setFillColor(sf::Color::Green);
-                        successMessage.setPosition(200, 500); 
+                        successMessage.setString("Tu imagen se subio exitosamente! \n Sube otra o regresa a buscar");
+                        successMessage.setCharacterSize(20);
+                        successMessage.setFillColor(sf::Color::Black);
+                        successMessage.setPosition(278.3, 331.9);
 
                         while (subirImagen->isOpen()) {
                             sf::Event subirAbierto;
@@ -244,15 +242,18 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                             if (uploadedImage.empty()) {
                                                 std::cerr << "Error al cargar la imagen seleccionada." << std::endl;
                                             }
-                                            /*else {
+                                            else {
+                                                //se guarda el nombre original
+                                                std::filesystem::path pathObj(filePath);
+                                                std::string fileName = pathObj.filename().string();
                                                 //se guarda la foto en folder
-                                                if (saveImageToFolder(uploadedImage, "uploaded_image.jpg")) {
+                                                if (saveImageToFolder(uploadedImage, fileName)) {
                                                     imageUploaded = true;
                                                 }
                                                 else {
                                                     std::cerr << "Error al guardar la imagen." << std::endl;
                                                 }
-                                            }*/
+                                            }
                                         }
                                         else {
                                             std::cout << "No se selecciono ningun archivo." << std::endl;
