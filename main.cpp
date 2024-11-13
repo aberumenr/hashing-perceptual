@@ -17,8 +17,6 @@
 using namespace cv;
 using namespace std;
 
-namespace fs = std::filesystem;
-
 const int TABLE_SIZE = 10007;  // num primo grande para la tabla hash
 
 
