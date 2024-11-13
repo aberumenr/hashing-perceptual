@@ -104,11 +104,11 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
     sf::RenderWindow* window = createTab();
  
     //imagen de fondo 
-    sf::Texture backgroundTexture;
-    if (!backgroundTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\main menu.png")) { //aqui va el path a la imagen
+    sf::Texture menuTexture;
+    if (!menuTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\main menu.png")) { //aqui va el path a la imagen
         std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
     }
-    sf::Sprite backgroundSprite(backgroundTexture);
+    sf::Sprite menuSprite(menuTexture);
 
     //font para los botones
     sf::Font font;
@@ -160,40 +160,87 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
     resizePics(window->getSize());
 
     while (window->isOpen()) {
-        sf::Event event;
-        while (window->pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
+        sf::Event menuAbierto;
+        while (window->pollEvent(menuAbierto)) {
+            if (menuAbierto.type == sf::Event::Closed) {
                 window->close();
             }
 
-            if (event.type == sf::Event::Resized) {
+            if (menuAbierto.type == sf::Event::Resized) {
                 sf::Vector2u newSize = window->getSize();
             }
 
 
             //se inicia la funcion para que se detecte que los botones funcionan
             //el mensaje de cout se va a quitar por ahorita es para comprobar que si funciona el clic
-            if (event.type == sf::Event::MouseButtonPressed) {
-                if (event.mouseButton.button == sf::Mouse::Left) {
+            if (menuAbierto.type == sf::Event::MouseButtonPressed) {
+                if (menuAbierto.mouseButton.button == sf::Mouse::Left) {
                     // busca las coordenadas del mouse en la ventana
                     sf::Vector2f mousePos = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
 
                     if (subirImagenButton.first.getGlobalBounds().contains(mousePos)) {
-                        std::cout << "Clic a boton Subir Imagen." << std::endl;
                         // aqui se le agrega una ventana para subir la imagen que quiere el usuario
+                        sf::RenderWindow* subirImagen = createTab();
+
+                        //imagen de fondo 
+                        sf::Texture subirTexture;
+                        if (!subirTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\subir.png")) { //aqui va el path a la imagen
+                            std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+                        }
+                        sf::Sprite subirSprite(subirTexture);
+
+                        while (subirImagen->isOpen()) {
+                            sf::Event subirAbierto;
+                            while (subirImagen->pollEvent(subirAbierto)) {
+                                if (subirAbierto.type == sf::Event::Closed) {
+                                    subirImagen->close();
+                                }
+                            }
+                            //display
+                            subirImagen->clear(sf::Color::White);
+
+                            //se dibuja el fondo
+                            subirImagen->draw(subirSprite);
+
+                            subirImagen->display();
+                        } 
                     }
 
                     else if (buscarButton.first.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Clic a boton Buscar." << std::endl;
                         // aqui se le agrega una ventana para buscar la imagen que quiere el usuario
-                        
+                        sf::RenderWindow* buscarImagen = createTab();
+
+                        //imagen de fondo 
+                        sf::Texture buscarTexture;
+                        if (!buscarTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\subir.png")) { //aqui va el path a la imagen
+                            std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+                        }
+                        sf::Sprite buscarSprite(buscarTexture);
+
+                        while (buscarImagen->isOpen()) {
+                            sf::Event buscarAbierto;
+                            while (buscarImagen->pollEvent(buscarAbierto)) {
+                                if (buscarAbierto.type == sf::Event::Closed) {
+                                    buscarImagen->close();
+                                }
+                            }
+                            //display
+                            buscarImagen->clear(sf::Color::White);
+
+                            //se dibuja el fondo
+                            buscarImagen->draw(buscarSprite);
+
+                            buscarImagen->display();
+                        }
+                        /*
                         //se dibujan las imagenes
                         if (sprite1.getTexture()) {
                             window->draw(sprite1);
                         }
                         if (sprite2.getTexture()) {
                             window->draw(sprite2);
-                        }
+                        }*/
                     }
 
                     else if (guardadosButton.first.getGlobalBounds().contains(mousePos)) {
@@ -215,7 +262,7 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
         window->clear(sf::Color::White);
 
         //se dibuja el fondo
-        window->draw(backgroundSprite);
+        window->draw(menuSprite);
 
 
         //se dibujan los botones
