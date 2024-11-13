@@ -1,4 +1,22 @@
 #include "interface.h"
+#include "tinyfiledialogs.h"
+#include <filesystem>
+#include <fstream>
+
+/*namespace fs = std::filesystem;
+
+bool saveImageToFolder(const cv::Mat& image, const std::string& fileName) {
+    std::string folderPath = "Mis Imagenes";
+
+    //si no se ha creado el folder de imagenes, se crea
+    if (!fs::exists(folderPath)) {
+        fs::create_directory(folderPath);
+    }
+
+    std::string filePath = folderPath + "/" + fileName;
+    return cv::imwrite(filePath, image);
+}*/
+
 
 sf::Texture loadImage(const cv::Mat& image) {
     sf::Texture texture;
@@ -182,6 +200,8 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         // aqui se le agrega una ventana para subir la imagen que quiere el usuario
                         sf::RenderWindow* subirImagen = createTab();
 
+                        auto uploadButton = agregarBotonRect({ 861.7, 490.6 }, { 226.8, 46.5 }, " ", font);
+
                         //imagen de fondo 
                         sf::Texture subirTexture;
                         if (!subirTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\subir.png")) { //aqui va el path a la imagen
@@ -189,23 +209,70 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         }
                         sf::Sprite subirSprite(subirTexture);
 
+                        //aqui se guardan la textura y sprite de la imagen subida
+                        sf::Texture uploadedTexture;
+                        sf::Sprite uploadedSprite;
+                        bool imageUploaded = false; 
+
+                        //mensajito
+                        sf::Text successMessage;
+                        successMessage.setFont(font);
+                        successMessage.setString("Tu imagen se subio exitosamente!");
+                        successMessage.setCharacterSize(24);
+                        successMessage.setFillColor(sf::Color::Green);
+                        successMessage.setPosition(200, 500); 
+
                         while (subirImagen->isOpen()) {
                             sf::Event subirAbierto;
+
                             while (subirImagen->pollEvent(subirAbierto)) {
                                 if (subirAbierto.type == sf::Event::Closed) {
                                     subirImagen->close();
                                 }
-                            }
-                            //display
-                            subirImagen->clear(sf::Color::White);
+                                if (subirAbierto.type == sf::Event::MouseButtonPressed &&
+                                    subirAbierto.mouseButton.button == sf::Mouse::Left) {
+                                    sf::Vector2f mouseClickPos(subirAbierto.mouseButton.x, subirAbierto.mouseButton.y);
 
-                            //se dibuja el fondo
+                                    //boton de subir archivo
+                                    if (uploadButton.first.getGlobalBounds().contains(mouseClickPos)) {
+                                        const char* fileFilter[1] = { "*.png;*.jpg;*.jpeg;*.bmp" };
+                                        const char* filePath = tinyfd_openFileDialog("Select Image File", "", 1, fileFilter, "Image Files", 0);
+
+                                        if (filePath) {
+                                            std::cout << "Archivo seleccionado: " << filePath << std::endl;
+                                            cv::Mat uploadedImage = cv::imread(filePath);
+                                            if (uploadedImage.empty()) {
+                                                std::cerr << "Error al cargar la imagen seleccionada." << std::endl;
+                                            }
+                                            /*else {
+                                                //se guarda la foto en folder
+                                                if (saveImageToFolder(uploadedImage, "uploaded_image.jpg")) {
+                                                    imageUploaded = true;
+                                                }
+                                                else {
+                                                    std::cerr << "Error al guardar la imagen." << std::endl;
+                                                }
+                                            }*/
+                                        }
+                                        else {
+                                            std::cout << "No se selecciono ningun archivo." << std::endl;
+                                        }
+                                    }
+                                }
+                            }
+                            subirImagen->clear(sf::Color::White);
                             subirImagen->draw(subirSprite);
+                            subirImagen->draw(uploadButton.first);
+
+                            if (imageUploaded) {
+                                subirImagen->draw(successMessage);
+                            }
 
                             subirImagen->display();
-                        } 
-                    }
+                        }
 
+                    } 
+                    
                     else if (buscarButton.first.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Clic a boton Buscar." << std::endl;
                         // aqui se le agrega una ventana para buscar la imagen que quiere el usuario

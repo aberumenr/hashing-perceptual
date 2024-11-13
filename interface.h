@@ -5,6 +5,9 @@
 #include <opencv2/opencv.hpp>
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <filesystem>
+#include <fstream>
+
 
 sf::RenderWindow* createTab();
 void runInterface(const std::string& imagePath1, const std::string& imagePath2);
