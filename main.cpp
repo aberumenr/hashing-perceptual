@@ -7,7 +7,6 @@
 #include <filesystem>
 #include <fstream>
 
-
 // Para el display de la imagen
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -18,7 +17,15 @@
 using namespace cv;
 using namespace std;
 
+namespace fs = std::filesystem;
+
 const int TABLE_SIZE = 10007;  // num primo grande para la tabla hash
+
+
+struct ImageEntry {
+    string path;
+    unsigned long long hash;
+};
 
 
 // Funcion para generar un hash
@@ -35,19 +42,19 @@ unsigned long long improvedImageHash(const string& imagePath) {
     unsigned long long hash = 0;  // Usamos un hash de 64 bits para mayor capacidad
     const unsigned long long prime = 31; // Constante prima para mejorar la dispersión
 
-    // Recorrer cada píxel y realizar una operación sobre los valores RGB
+    // recorrer cada pixel y realizar una operacion sobre los valores RGB
     for (int row = 0; row < image.rows; ++row) {
         for (int col = 0; col < image.cols; ++col) {
-            // Obtener el valor del píxel (BGR en OpenCV)
+            // obtener el valor del pixel (BGR en OpenCV)
             Vec3b pixel = image.at<Vec3b>(row, col);
 
-            // Realizar operaciones sobre los canales B, G, R para mezclar los valores
+            // realizar operaciones sobre los canales B, G, R para mezclar los valores
             unsigned long long pixelValue = (pixel[0] * prime) ^ (pixel[1] << 8) ^ (pixel[2] << 16);
 
-            // Sumar el valor del píxel al hash usando operaciones de desplazamiento y XOR
+            // sumar el valor del pixel al hash usando operaciones de desplazamiento y XOR
             hash = (hash * prime) + (pixelValue ^ (pixelValue >> 3) ^ (pixelValue << 7));
 
-            // Operación adicional para mejorar la dispersión
+            // operacion adicional para mejorar la dispersion
             hash = hash ^ (hash >> 13);
         }
     }
@@ -59,15 +66,14 @@ int hammingDistance(unsigned long long hash1, unsigned long long hash2) {
     unsigned long long res = hash1 ^ hash2;
     int distancia = 0;
 
-    // Contar los bits diferentes
+    // contar los bits diferentes
     while (res != 0) {
-        distancia += res & 1; // Incrementar si el bit menos significativo es 1
-        res >>= 1; // Desplazar a la derecha
+        distancia += res & 1; // incrementar si el bit menos significativo es 1
+        res >>= 1; // desplazar a la derecha
     }
 
     return distancia;
 }
-
 
 // se crea la tabla hash para prevenir las colisiones de hashing por chaining
 class HashTable {
@@ -76,61 +82,74 @@ class HashTable {
 public:
     HashTable(int size) : table(size) {}
 
-    // Insertar un hash en la tabla
+    // insertar un hash en la tabla
     void insert(unsigned long long hashValue) {
         int index = hashValue % TABLE_SIZE;
-        table[index].push_back(hashValue);  // Añadir a la lista en esa posición
+        table[index].push_back(hashValue);  // añadir a la lista en esa posicion
     }
 
-    // Buscar un hash en la tabla
+    // buscar un hash en la tabla
     bool search(unsigned long long hashValue) {
         int index = hashValue % TABLE_SIZE;
         for (auto& h : table[index]) {
             if (h == hashValue) {
-                return true;  // Hash encontrado
+                return true;  // hash encontrado
             }
         }
-        return false;  // No encontrado
+        return false;  // no encontrado
     }
 };
 
-int main() {
-    string imagePath1 = "C:\\Users\\alexa\\OneDrive\\Pictures\\Roblox\\RobloxScreenShot20231129_222148820.png";
-    string imagePath2 = "C:\\Users\\alexa\\OneDrive\\Pictures\\Roblox\\RobloxScreenShot20231129_222148820.png";
-
-    //calcular de manera individual los hashes de las imagenes
-    unsigned long long imageHash1 = improvedImageHash(imagePath1);
-    unsigned long long imageHash2 = improvedImageHash(imagePath2);
-
-    if (imageHash1 != 0 && imageHash2 != 0) {
-        cout << "Hash de la primera imagen: " << hex << imageHash1 << endl;
-        cout << "Hash de la segunda imagen: " << hex << imageHash2 << endl;
-
-        //se calcula la distancia de hamming entre los hashes de las dos imagenes
-        int distancia = hammingDistance(imageHash1, imageHash2);
-        cout << "Distancia de Hamming entre las imágenes: " << distancia << endl;
-
-        if (distancia == 0) {
-            cout << "Las imagenes son idénticas." << endl;
-        }
-        else {
-            cout << "Las imagenes son diferentes." << endl;
-        }
-
-        // Crear la tabla hash
-        HashTable hashTable(TABLE_SIZE);
-
-        // Insertar el hash de la primera imagen en la tabla
-        if (!hashTable.search(imageHash1)) {
-            hashTable.insert(imageHash1);
-            cout << "Hash de la primera imagen insertado en la tabla." << endl;
-        }
-        else {
-            cout << "Colisión detectada: el hash de la primera imagen ya existe en la tabla." << endl;
+// iniciar la base de datos 
+vector<ImageEntry> DatabaseImage() {
+    vector<ImageEntry> database;
+    for (int i = 1; i <= 13; ++i) { // aqui se cambia el tamaño de la base, esta en 13 pq solo descargue 13 imagenes
+        string path = "C:\\Users\\mendi\\Documents\\PROYECTO ANALISIS DE ALGORITMOS\\Proyecto Analisis\\Images\\IMG" + to_string(i) + ".jpg";
+        unsigned long long hash = improvedImageHash(path); //crea el hash de las imagenes de la base de datos
+        if (hash != 0) {
+            database.push_back({ path, hash });
         }
     }
+    return database;
+}
 
-    runInterface(imagePath1, imagePath2);
+int main() {
+    // vector para la base de datos 
+    vector<ImageEntry> imageDatabase = DatabaseImage();
 
+    // crear la tabla hash y agregar hashes de las imagenes de la base de datos
+    HashTable hashTable(TABLE_SIZE);
+    for (const auto& entry : imageDatabase) {
+        hashTable.insert(entry.hash);
+    }
+
+    // hash de imagen cargada por el usuario
+    string userImagePath = "C:\\Users\\mendi\\Documents\\PROYECTO ANALISIS DE ALGORITMOS\\Proyecto Analisis\\Images\\IMG12.jpg";
+    unsigned long long userImageHash = improvedImageHash(userImagePath);
+
+    if (userImageHash != 0) {
+        cout << "Hash de la imagen cargada: " << hex << userImageHash << endl;
+
+        // revisar si son similares
+        bool foundSimilar = false;
+        for (const auto& entry : imageDatabase) {
+            int distancia = hammingDistance(userImageHash, entry.hash);
+            if (distancia < 10) {  // rango de similitud
+                cout << "Imagen similar encontrada: " << entry.path /*Aqui va la funcion que imprime la o las imagenes similares en vez del path*/ << " (Distancia de Hamming: " << distancia << ")" << endl;
+                foundSimilar = true;
+            }
+        }
+
+        if (!foundSimilar) 
+        {
+            cout << "No se encontraron imágenes similares en la base de datos." << endl;
+        }
+    }
+    else 
+    {
+        cout << "No se pudo calcular el hash de la imagen cargada." << endl;
+    }
+
+    runInterface(userImagePath, userImagePath); 
     return 0;
 }
