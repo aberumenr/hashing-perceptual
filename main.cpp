@@ -6,6 +6,7 @@
 #include <SFML/Graphics.hpp>
 #include <filesystem>
 #include <fstream>
+#include <algorithm> 
 
 // Para el display de la imagen
 #include <opencv2/core.hpp>
@@ -17,28 +18,28 @@
 using namespace cv;
 using namespace std;
 
-const int TABLE_SIZE = 10007;  // num primo grande para la tabla hash
+namespace fs = std::filesystem;
 
+const int TABLE_SIZE = 10007;  // num primo grande para la tabla hash
 
 struct ImageEntry {
     string path;
     unsigned long long hash;
 };
 
-
-// Funcion para generar un hash
+// funcion para generar un hash
 unsigned long long improvedImageHash(const string& imagePath) {
-    // Cargar la imagen usando opencv
+    // cargar la imagen usando opencv
     Mat image = imread(imagePath, IMREAD_COLOR);
 
-    // Verificar si la imagen se cargó
+    // verificar si la imagen se cargo
     if (image.empty()) {
         cout << "Error: No se pudo cargar la imagen." << endl;
         return 0;
     }
 
-    unsigned long long hash = 0;  // Usamos un hash de 64 bits para mayor capacidad
-    const unsigned long long prime = 31; // Constante prima para mejorar la dispersión
+    unsigned long long hash = 0;  // usamos un hash de 64 bits para mayor capacidad
+    const unsigned long long prime = 31; // constante prima para mejorar la dispersion
 
     // recorrer cada pixel y realizar una operacion sobre los valores RGB
     for (int row = 0; row < image.rows; ++row) {
@@ -73,7 +74,7 @@ int hammingDistance(unsigned long long hash1, unsigned long long hash2) {
     return distancia;
 }
 
-// se crea la tabla hash para prevenir las colisiones de hashing por chaining
+// clase para la tabla hash, previene colisiones de hashing por chaining
 class HashTable {
     vector<list<unsigned long long>> table;
 
@@ -101,9 +102,9 @@ public:
 // iniciar la base de datos 
 vector<ImageEntry> DatabaseImage() {
     vector<ImageEntry> database;
-    for (int i = 1; i <= 13; ++i) { // aqui se cambia el tamaño de la base, esta en 13 pq solo descargue 13 imagenes
+    for (int i = 1; i < 50; ++i) { // cambia el tamaño de la base aqui
         string path = "C:\\Users\\mendi\\Documents\\PROYECTO ANALISIS DE ALGORITMOS\\Proyecto Analisis\\Images\\IMG" + to_string(i) + ".jpg";
-        unsigned long long hash = improvedImageHash(path); //crea el hash de las imagenes de la base de datos
+        unsigned long long hash = improvedImageHash(path); // crea el hash de las imagenes de la base de datos
         if (hash != 0) {
             database.push_back({ path, hash });
         }
@@ -122,32 +123,43 @@ int main() {
     }
 
     // hash de imagen cargada por el usuario
-    string userImagePath = "C:\\Users\\mendi\\Documents\\PROYECTO ANALISIS DE ALGORITMOS\\Proyecto Analisis\\Images\\IMG12.jpg";
+    string userImagePath = "C:\\Users\\mendi\\Pictures\\Screenshots\\Screenshot 2024-09-03 111323.png";
     unsigned long long userImageHash = improvedImageHash(userImagePath);
 
     if (userImageHash != 0) {
         cout << "Hash de la imagen cargada: " << hex << userImageHash << endl;
 
-        // revisar si son similares
-        bool foundSimilar = false;
+        // vector para almacenar imagenes similares y sus distancias
+        vector<pair<int, string>> similarImages;
+
         for (const auto& entry : imageDatabase) {
             int distancia = hammingDistance(userImageHash, entry.hash);
-            if (distancia < 10) {  // rango de similitud
-                cout << "Imagen similar encontrada: " << entry.path /*Aqui va la funcion que imprime la o las imagenes similares en vez del path*/ << " (Distancia de Hamming: " << distancia << ")" << endl;
-                foundSimilar = true;
+            if (distancia < 20) {  // rango de similitud
+                similarImages.push_back(make_pair(distancia, entry.path));
             }
         }
 
-        if (!foundSimilar) 
-        {
+        // ordenar imagenes similares por distancia de Hamming
+        sort(similarImages.begin(), similarImages.end());
+
+        // variable para contar la cant de imagenes similares max 3
+        int numSimilarImages = min(3, static_cast<int>(similarImages.size()));
+
+        if (numSimilarImages > 0) {
+            cout << "Se encontraron " << numSimilarImages << " imágenes similares:" << endl;
+            for (int i = 0; i < numSimilarImages; ++i) {
+                cout << "Imagen similar: " << similarImages[i].second
+                    << " Distancia de Hamming: " << similarImages[i].first << endl;
+            }
+        }
+        else {
             cout << "No se encontraron imágenes similares en la base de datos." << endl;
         }
     }
-    else 
-    {
+    else {
         cout << "No se pudo calcular el hash de la imagen cargada." << endl;
     }
 
-    runInterface(userImagePath, userImagePath); 
+    runInterface(userImagePath, userImagePath);
     return 0;
 }
