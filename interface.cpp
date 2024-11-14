@@ -200,8 +200,8 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                     if (subirImagenButton.first.getGlobalBounds().contains(mousePos)) {
                         // aqui se le agrega una ventana para subir la imagen que quiere el usuario
                         sf::RenderWindow* subirImagen = createTab();
+                        DragAcceptFiles(subirImagen->getSystemHandle(), TRUE);
 
-                        
 
                         auto uploadButton = agregarBotonRect({ 861.7, 490.6 }, { 226.8, 46.5 }, " ", font);
                         auto dragWindow = agregarBotonRect({ 743.9, 176.6 }, { 462.3, 201.8 }, " ", font);
@@ -231,7 +231,43 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         std::string droppedFilePath;
 
                         while (subirImagen->isOpen()) {
-                            DragAcceptFiles(subirImagen->getSystemHandle(), TRUE);
+                            //ver los mensajes y actividad direcrtamente de Windows
+                            MSG msg;
+                            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+                                std::cout << "Processing Windows message: " << msg.message << std::endl;
+                                if (msg.message == WM_DROPFILES) {
+                                    std::cout << "WM_DROPFILES detected" << std::endl;
+                                    HDROP hDrop = (HDROP)msg.wParam;
+                                    char filePath[MAX_PATH];
+
+                                    if (DragQueryFileA(hDrop, 0, filePath, MAX_PATH)) {
+                                        std::cout << "Archivo arrastrado: " << filePath << std::endl;
+                                        cv::Mat uploadedImage = cv::imread(filePath);
+
+                                        if (!uploadedImage.empty()) {
+                                            std::cout << "Imagen cargada exitosamente." << std::endl;
+                                            std::filesystem::path pathObj(filePath);
+                                            std::string fileName = pathObj.filename().string();
+
+                                            if (saveImageToFolder(uploadedImage, fileName)) {
+                                                std::cout << "Imagen guardada exitosamente en la carpeta." << std::endl;
+                                                imageUploaded = true;
+                                            }
+                                            else {
+                                                std::cerr << "Error al guardar la imagen." << std::endl;
+                                            }
+                                        }
+                                        else {
+                                            std::cerr << "Error al cargar la imagen arrastrada." << std::endl;
+                                        }
+                                    }
+
+                                    DragFinish(hDrop);
+                                }
+
+                                TranslateMessage(&msg);
+                                DispatchMessage(&msg);
+                            }
 
                             sf::Event subirAbierto;
 
@@ -280,45 +316,10 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                         isDragging = true;
                                     }
                                 }
-                               
+
                             }
 
-                            //ver los mensajes y actividad direcrtamente de Windows
-                            MSG msg;
-                            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-                                std::cout << "Processing Windows message: " << msg.message << std::endl;
-                                if (msg.message == WM_DROPFILES) {
-                                    std::cout << "WM_DROPFILES detected" << std::endl;
-                                    HDROP hDrop = (HDROP)msg.wParam;
-                                    char filePath[MAX_PATH];
-
-                                    if (DragQueryFileA(hDrop, 0, filePath, MAX_PATH)) {
-                                        std::cout << "Archivo arrastrado: " << filePath << std::endl;
-                                        cv::Mat uploadedImage = cv::imread(filePath);
-
-                                        if (!uploadedImage.empty()) {
-                                            std::cout << "Imagen cargada exitosamente." << std::endl;
-                                            std::filesystem::path pathObj(filePath);
-                                            std::string fileName = pathObj.filename().string();
-
-                                            if (saveImageToFolder(uploadedImage, fileName)) {
-                                                std::cout << "Imagen guardada exitosamente en la carpeta." << std::endl;
-                                                imageUploaded = true;
-                                            }
-                                            else {
-                                                std::cerr << "Error al guardar la imagen." << std::endl;
-                                            }
-                                        }
-                                        else {
-                                            std::cerr << "Error al cargar la imagen arrastrada." << std::endl;
-                                        }
-                                    }
-
-                                    DragFinish(hDrop);
-                                }
-                                TranslateMessage(&msg);
-                                DispatchMessage(&msg);
-                            }
+                            
 
                             subirImagen->clear(sf::Color::White);
                             subirImagen->draw(subirSprite);
