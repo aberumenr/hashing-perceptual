@@ -233,7 +233,7 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                             //ver los mensajes y actividad direcrtamente de Windows
                             MSG msg;
                             while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-                                std::cout << "Processing Windows message: " << msg.message << std::endl;
+                                //std::cout << "Processing Windows message: " << msg.message << std::endl;
                                 if (msg.message == WM_DROPFILES) {
                                     std::cout << "WM_DROPFILES detected" << std::endl;
                                     HDROP hDrop = (HDROP)msg.wParam;
