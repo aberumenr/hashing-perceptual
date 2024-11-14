@@ -1,11 +1,8 @@
 #include "interface.h"
 #include "tinyfiledialogs.h"
-#include <windows.h>
-#include <shellapi.h>
 
 namespace fs = std::filesystem;
 
-//para folder Mis Imagenes
 bool saveImageToFolder(const cv::Mat& image, const std::string& fileName) {
     std::string folderPath = "Mis Imagenes";
 
@@ -124,14 +121,14 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
 
     //imagen de fondo 
     sf::Texture menuTexture;
-    if (!menuTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\main menu.png")) { //aqui va el path a la imagen
+    if (!menuTexture.loadFromFile("C:\\Users\\prisc\\OneDrive\\Documentos\\Visual Studio 2022\\main menu.png")) { //aqui va el path a la imagen
         std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
     }
     sf::Sprite menuSprite(menuTexture);
 
     //font para los botones
     sf::Font font;
-    if (!font.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\font\\Nexa-Heavy.ttf")) { //aqui ponen el path del archivo ttf
+    if (!font.loadFromFile("C:\\Users\\prisc\\OneDrive\\Documentos\\Visual Studio 2022\\nexa\\Nexa-Heavy.ttf")) { //aqui ponen el path del archivo ttf
         std::cerr << "Error cargando fuente" << std::endl;
     }
 
@@ -147,20 +144,6 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
     cv::Mat image2 = cv::imread(imagePath2);
     sf::Texture texture2 = loadImage(image2);
     sf::Sprite sprite2(texture2);
-
-    sf::Text mensajeAyuda;
-    mensajeAyuda.setFont(font);
-    //este es el mensaje de ayuda que podran leer los usuarios
-    mensajeAyuda.setString("El sistema te permite buscar im�genes mediante comparaci�n\n"
-        "con las im�genes del programa o puedes cargar las tuyas.\n"
-        "Usa los botones para realizar acciones como Subir Imagen,\n"
-        "Buscar o acceder a las im�genes Guardadas.");
-    mensajeAyuda.setCharacterSize(14);
-    mensajeAyuda.setFillColor(sf::Color::Black);
-    mensajeAyuda.setPosition(0, 25); // ajusta la posici�n del mensaje
-
-    //si es verdadero se mostrara el mensaje
-    bool mostrarMensaje = false;
 
     auto resizePics = [&](sf::Vector2u windowSize) {
         float maxWidth = static_cast<float>(windowSize.x) / 2;
@@ -201,14 +184,11 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         // aqui se le agrega una ventana para subir la imagen que quiere el usuario
                         sf::RenderWindow* subirImagen = createTab();
 
-                        
-
                         auto uploadButton = agregarBotonRect({ 861.7, 490.6 }, { 226.8, 46.5 }, " ", font);
-                        auto dragWindow = agregarBotonRect({ 743.9, 176.6 }, { 462.3, 201.8 }, " ", font);
 
                         //imagen de fondo 
                         sf::Texture subirTexture;
-                        if (!subirTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\subir.png")) { //aqui va el path a la imagen
+                        if (!subirTexture.loadFromFile("C:\\Users\\prisc\\OneDrive\\Documentos\\Visual Studio 2022\\subir.png")) { //aqui va el path a la imagen
                             std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
                         }
                         sf::Sprite subirSprite(subirTexture);
@@ -226,20 +206,13 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         successMessage.setFillColor(sf::Color::Black);
                         successMessage.setPosition(278.3, 331.9);
 
-                        //para ver si arrastra el mouse
-                        bool isDragging = false;
-                        std::string droppedFilePath;
-
                         while (subirImagen->isOpen()) {
-                            DragAcceptFiles(subirImagen->getSystemHandle(), TRUE);
-
                             sf::Event subirAbierto;
 
                             while (subirImagen->pollEvent(subirAbierto)) {
                                 if (subirAbierto.type == sf::Event::Closed) {
                                     subirImagen->close();
                                 }
-
                                 if (subirAbierto.type == sf::Event::MouseButtonPressed &&
                                     subirAbierto.mouseButton.button == sf::Mouse::Left) {
                                     sf::Vector2f mouseClickPos(subirAbierto.mouseButton.x, subirAbierto.mouseButton.y);
@@ -252,7 +225,6 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                         if (filePath) {
                                             std::cout << "Archivo seleccionado: " << filePath << std::endl;
                                             cv::Mat uploadedImage = cv::imread(filePath);
-
                                             if (uploadedImage.empty()) {
                                                 std::cerr << "Error al cargar la imagen seleccionada." << std::endl;
                                             }
@@ -260,7 +232,6 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                                 //se guarda el nombre original
                                                 std::filesystem::path pathObj(filePath);
                                                 std::string fileName = pathObj.filename().string();
-
                                                 //se guarda la foto en folder
                                                 if (saveImageToFolder(uploadedImage, fileName)) {
                                                     imageUploaded = true;
@@ -274,56 +245,11 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                             std::cout << "No se selecciono ningun archivo." << std::endl;
                                         }
                                     }
-
-                                    //si esta en el area de arrastrar
-                                    if (dragWindow.first.getGlobalBounds().contains(mouseClickPos)) {
-                                        isDragging = true;
-                                    }
                                 }
-                               
                             }
-
-                            //ver los mensajes y actividad direcrtamente de Windows
-                            MSG msg;
-                            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-                                std::cout << "Processing Windows message: " << msg.message << std::endl;
-                                if (msg.message == WM_DROPFILES) {
-                                    std::cout << "WM_DROPFILES detected" << std::endl;
-                                    HDROP hDrop = (HDROP)msg.wParam;
-                                    char filePath[MAX_PATH];
-
-                                    if (DragQueryFileA(hDrop, 0, filePath, MAX_PATH)) {
-                                        std::cout << "Archivo arrastrado: " << filePath << std::endl;
-                                        cv::Mat uploadedImage = cv::imread(filePath);
-
-                                        if (!uploadedImage.empty()) {
-                                            std::cout << "Imagen cargada exitosamente." << std::endl;
-                                            std::filesystem::path pathObj(filePath);
-                                            std::string fileName = pathObj.filename().string();
-
-                                            if (saveImageToFolder(uploadedImage, fileName)) {
-                                                std::cout << "Imagen guardada exitosamente en la carpeta." << std::endl;
-                                                imageUploaded = true;
-                                            }
-                                            else {
-                                                std::cerr << "Error al guardar la imagen." << std::endl;
-                                            }
-                                        }
-                                        else {
-                                            std::cerr << "Error al cargar la imagen arrastrada." << std::endl;
-                                        }
-                                    }
-
-                                    DragFinish(hDrop);
-                                }
-                                TranslateMessage(&msg);
-                                DispatchMessage(&msg);
-                            }
-
                             subirImagen->clear(sf::Color::White);
                             subirImagen->draw(subirSprite);
                             subirImagen->draw(uploadButton.first);
-                            subirImagen->draw(dragWindow.first);
 
                             if (imageUploaded) {
                                 subirImagen->draw(successMessage);
@@ -332,10 +258,8 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                             subirImagen->display();
                         }
 
-
-
-
                     }
+
                     else if (buscarButton.first.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Clic a boton Buscar." << std::endl;
                         // aqui se le agrega una ventana para buscar la imagen que quiere el usuario
@@ -343,7 +267,7 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
 
                         //imagen de fondo 
                         sf::Texture buscarTexture;
-                        if (!buscarTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\subir.png")) { //aqui va el path a la imagen
+                        if (!buscarTexture.loadFromFile("C:\\Users\\prisc\\OneDrive\\Documentos\\Visual Studio 2022\\subir.png")) { //aqui va el path a la imagen
                             std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
                         }
                         sf::Sprite buscarSprite(buscarTexture);
@@ -379,11 +303,52 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                     }
 
                     else if (ayudaButton.first.getGlobalBounds().contains(mousePos)) {
-                        std::cout << "Clic a boton ayuda." << std::endl;
-                        mostrarMensaje = !mostrarMensaje; // se hace la accion de mostrar/ocultar el mensaje de ayuda
-                    }
-                    else {
-                        mostrarMensaje = false;
+                        std::cout << "Clic a boton Ayuda." << std::endl;
+                        // aqui se le agrega una ventana para buscar la imagen que quiere el usuario
+                        sf::RenderWindow* ayudaImagen = createTab();
+
+                        //imagen de fondo 
+                        sf::Texture ayudaTexture;
+                        if (!ayudaTexture.loadFromFile("C:\\Users\\prisc\\OneDrive\\Documentos\\Visual Studio 2022\\boton ayuda.png")) { //aqui va el path a la imagen
+                            std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+                        }
+                        ayudaTexture.setSmooth(true);
+                        sf::Sprite ayudaSprite(ayudaTexture);
+
+                        auto resizeAyudaSprite = [&]() {
+                        sf::Vector2u ventanaSize = ayudaImagen->getSize();
+                        float scaleX = static_cast<float>(ventanaSize.x) / ayudaTexture.getSize().x;
+                        float scaleY = static_cast<float>(ventanaSize.y) / ayudaTexture.getSize().y;
+                        float scale = std::min(scaleX, scaleY);
+                        ayudaSprite.setScale(scale, scale);
+
+                        ayudaSprite.setPosition(
+                            (ventanaSize.x - ayudaSprite.getGlobalBounds().width) / 2,
+                            (ventanaSize.y - ayudaSprite.getGlobalBounds().height) / 2
+                        );
+                            };
+
+                        resizeAyudaSprite();
+
+                        while (ayudaImagen->isOpen()) {
+                            sf::Event ayudaAbierto;
+                            while (ayudaImagen->pollEvent(ayudaAbierto)) {
+                                if (ayudaAbierto.type == sf::Event::Closed) {
+                                    ayudaImagen->close();
+                                }
+                                if (ayudaAbierto.type == sf::Event::Closed)
+                                {
+                                    resizeAyudaSprite();
+                                }
+                            }
+                            //display
+                            ayudaImagen->clear(sf::Color::White);
+
+                            //se dibuja el fondo
+                            ayudaImagen->draw(ayudaSprite);
+
+                            ayudaImagen->display();
+                        }
                     }
                 }
             }
@@ -404,11 +369,6 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
         window->draw(guardadosButton.second);
         window->draw(ayudaButton.first);
         window->draw(ayudaButton.second);
-
-        //se crea una ventana para poder mostrar el mensaje de ayuda para el usuario
-        if (mostrarMensaje) {
-            window->draw(mensajeAyuda);
-        }
 
         window->display();
     }
