@@ -59,7 +59,6 @@ sf::Texture loadImage(const cv::Mat& image) {
     if (!texture.loadFromImage(img)) {
         std::cerr << "Error: Imagen en formato incorrecto." << std::endl;
     }
-
     return texture;
 }
 
@@ -319,8 +318,6 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
 
                             }
 
-                            
-
                             subirImagen->clear(sf::Color::White);
                             subirImagen->draw(subirSprite);
                             subirImagen->draw(uploadButton.first);
@@ -344,7 +341,7 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
 
                         //imagen de fondo 
                         sf::Texture buscarTexture;
-                        if (!buscarTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\subir.png")) { //aqui va el path a la imagen
+                        if (!buscarTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\buscarImagen.png")) { //aqui va el path a la imagen
                             std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
                         }
                         sf::Sprite buscarSprite(buscarTexture);
@@ -364,14 +361,6 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
 
                             buscarImagen->display();
                         }
-                        /*
-                        //se dibujan las imagenes
-                        if (sprite1.getTexture()) {
-                            window->draw(sprite1);
-                        }
-                        if (sprite2.getTexture()) {
-                            window->draw(sprite2);
-                        }*/
                     }
 
                     else if (guardadosButton.first.getGlobalBounds().contains(mousePos)) {
