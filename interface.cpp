@@ -2,8 +2,34 @@
 #include "tinyfiledialogs.h"
 #include <windows.h>
 #include <shellapi.h>
+#include <commdlg.h>
 
 namespace fs = std::filesystem;
+
+//funcion para seleccionar imagen
+std::wstring stringToWString(const std::string& str) {
+    return std::wstring(str.begin(), str.end());
+}
+
+std::string openFolder(const std::string& initialFolder) {
+    wchar_t filePath[MAX_PATH] = L""; 
+
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = NULL; 
+    ofn.lpstrFilter = L"Image Files\0*.png;*.jpg;*.jpeg;*.bmp\0"; 
+    ofn.lpstrFile = filePath;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.lpstrInitialDir = stringToWString(initialFolder).c_str(); 
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+
+    if (GetOpenFileName(&ofn)) {
+        return std::string(filePath, filePath + wcslen(filePath)); 
+    }
+    return ""; 
+}
+
 
 //para folder Mis Imagenes
 bool saveImageToFolder(const cv::Mat& image, const std::string& fileName) {
@@ -330,9 +356,6 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                             subirImagen->display();
                         }
 
-
-
-
                     }
                     else if (buscarButton.first.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Clic a boton Buscar." << std::endl;
@@ -346,11 +369,70 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         }
                         sf::Sprite buscarSprite(buscarTexture);
 
+                        auto abrirMisImagenesButton = agregarBotonRect({ 793.1, 409.5 }, { 266.6, 75 }, " ", font); 
+
+                        //file path a mis imagenes
+                        std::string folderPath = "C:\\Users\\alexa\\source\\repos\\opencv\\opencv\\Mis Imagenes";
+
+                        //se guarda la que elige el usuario
+                        std::string selectedImagePath;
+
                         while (buscarImagen->isOpen()) {
                             sf::Event buscarAbierto;
                             while (buscarImagen->pollEvent(buscarAbierto)) {
                                 if (buscarAbierto.type == sf::Event::Closed) {
                                     buscarImagen->close();
+                                }
+                                if (buscarAbierto.type == sf::Event::MouseButtonPressed &&
+                                    buscarAbierto.mouseButton.button == sf::Mouse::Left) {
+                                    sf::Vector2f mouseClickPos(buscarAbierto.mouseButton.x, buscarAbierto.mouseButton.y);
+
+                                    if (abrirMisImagenesButton.first.getGlobalBounds().contains(mouseClickPos)) {
+                                        std::cout << "Le diste click al boton de Mis Imagenes" << std::endl;
+                                        
+                                        selectedImagePath = openFolder(folderPath);
+                                        if (!selectedImagePath.empty()) {
+                                            std::cout << "Archivo seleccionado: " << selectedImagePath << std::endl;
+                                            /*// Calculate the hash of the selected image
+                                            unsigned long long selectedImageHash = improvedImageHash(selectedImagePath);
+
+                                            if (selectedImageHash != 0) {
+                                                std::cout << "Hash de la imagen seleccionada: " << std::hex << selectedImageHash << std::endl;
+
+                                                // Compare the hash with the database
+                                                std::vector<std::pair<int, std::string>> similarImages;
+                                                for (const auto& entry : imageDatabase) {
+                                                    int distancia = hammingDistance(selectedImageHash, entry.hash);
+                                                    if (distancia < 20) { // Similarity threshold
+                                                        similarImages.emplace_back(distancia, entry.path);
+                                                    }
+                                                }
+
+                                                // Sort and display the similar images
+                                                std::sort(similarImages.begin(), similarImages.end());
+                                                int numSimilarImages = std::min(3, static_cast<int>(similarImages.size()));
+
+                                                if (numSimilarImages > 0) {
+                                                    std::cout << "Se encontraron " << numSimilarImages << " imágenes similares:" << std::endl;
+                                                    for (int i = 0; i < numSimilarImages; ++i) {
+                                                        std::cout << "Imagen similar: " << similarImages[i].second
+                                                            << " Distancia de Hamming: " << similarImages[i].first << std::endl;
+                                                    }
+                                                }
+                                                else {
+                                                    std::cout << "No se encontraron imágenes similares." << std::endl;
+                                                }
+                                            }
+                                            else {
+                                                std::cerr << "Error al calcular el hash de la imagen seleccionada." << std::endl;
+                                            }*/
+                                        }
+                                        else {
+                                            std::cout << "No se selecciono ningun archivo." << std::endl;
+                                        }
+
+                                    }
+                                    
                                 }
                             }
                             //display
@@ -358,6 +440,10 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
 
                             //se dibuja el fondo
                             buscarImagen->draw(buscarSprite);
+
+                            //boton
+                            buscarImagen->draw(abrirMisImagenesButton.first);
+                            buscarImagen->draw(abrirMisImagenesButton.second);
 
                             buscarImagen->display();
                         }
@@ -369,8 +455,52 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                     }
 
                     else if (ayudaButton.first.getGlobalBounds().contains(mousePos)) {
-                        std::cout << "Clic a boton ayuda." << std::endl;
-                        mostrarMensaje = !mostrarMensaje; // se hace la accion de mostrar/ocultar el mensaje de ayuda
+                        std::cout << "Clic a boton Ayuda." << std::endl;
+                        // aqui se le agrega una ventana para buscar la imagen que quiere el usuario
+                        sf::RenderWindow* ayudaImagen = createTab();
+
+                        //imagen de fondo 
+                        sf::Texture ayudaTexture;
+                        if (!ayudaTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\boton ayuda.png")) { //aqui va el path a la imagen
+                            std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+                        }
+                        ayudaTexture.setSmooth(true);
+                        sf::Sprite ayudaSprite(ayudaTexture);
+
+                        auto resizeAyudaSprite = [&]() {
+                            sf::Vector2u ventanaSize = ayudaImagen->getSize();
+                            float scaleX = static_cast<float>(ventanaSize.x) / ayudaTexture.getSize().x;
+                            float scaleY = static_cast<float>(ventanaSize.y) / ayudaTexture.getSize().y;
+                            float scale = std::min(scaleX, scaleY);
+                            ayudaSprite.setScale(scale, scale);
+
+                            ayudaSprite.setPosition(
+                                (ventanaSize.x - ayudaSprite.getGlobalBounds().width) / 2,
+                                (ventanaSize.y - ayudaSprite.getGlobalBounds().height) / 2
+                            );
+                            };
+
+                        resizeAyudaSprite();
+
+                        while (ayudaImagen->isOpen()) {
+                            sf::Event ayudaAbierto;
+                            while (ayudaImagen->pollEvent(ayudaAbierto)) {
+                                if (ayudaAbierto.type == sf::Event::Closed) {
+                                    ayudaImagen->close();
+                                }
+                                if (ayudaAbierto.type == sf::Event::Closed)
+                                {
+                                    resizeAyudaSprite();
+                                }
+                            }
+                            //display
+                            ayudaImagen->clear(sf::Color::White);
+
+                            //se dibuja el fondo
+                            ayudaImagen->draw(ayudaSprite);
+
+                            ayudaImagen->display();
+                        }
                     }
                     else {
                         mostrarMensaje = false;
