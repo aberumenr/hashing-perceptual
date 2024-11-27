@@ -102,8 +102,8 @@ public:
 // iniciar la base de datos 
 vector<ImageEntry> DatabaseImage() {
     vector<ImageEntry> database;
-    for (int i = 1; i < 50; ++i) { // cambia el tamaño de la base aqui
-        string path = "C:\\Users\\mendi\\Documents\\PROYECTO ANALISIS DE ALGORITMOS\\Proyecto Analisis\\Images\\IMG" + to_string(i) + ".jpg";
+    for (int i = 1; i < 16; ++i) { // cambia el tamaño de la base aqui
+        string path = "C:\\Users\\alexa\\source\\repos\\opencv\\opencv\\Imagenes\\IMG" + to_string(i) + ".jpg";
         unsigned long long hash = improvedImageHash(path); // crea el hash de las imagenes de la base de datos
         if (hash != 0) {
             database.push_back({ path, hash });
@@ -112,9 +112,11 @@ vector<ImageEntry> DatabaseImage() {
     return database;
 }
 
+vector<ImageEntry> imageDatabase;
+
 int main() {
     // vector para la base de datos 
-    vector<ImageEntry> imageDatabase = DatabaseImage();
+    imageDatabase = DatabaseImage();
 
     // crear la tabla hash y agregar hashes de las imagenes de la base de datos
     HashTable hashTable(TABLE_SIZE);
@@ -123,7 +125,7 @@ int main() {
     }
 
     // hash de imagen cargada por el usuario
-    string userImagePath = "C:\\Users\\mendi\\Pictures\\Screenshots\\Screenshot 2024-09-03 111323.png";
+    string userImagePath = "C:\\Users\\alexa\\OneDrive\\Pictures\\Roblox\\RobloxScreenShot20231218_204242323.png";
     unsigned long long userImageHash = improvedImageHash(userImagePath);
 
     if (userImageHash != 0) {
@@ -163,3 +165,6 @@ int main() {
     runInterface(userImagePath, userImagePath);
     return 0;
 }
+
+
+
