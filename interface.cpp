@@ -1,4 +1,4 @@
-#include "interface.h"
+﻿#include "interface.h"
 #include "tinyfiledialogs.h"
 #include <windows.h>
 #include <shellapi.h>
@@ -57,6 +57,11 @@ bool likedImagesFolder(const cv::Mat& image, const std::string& fileName) {
     return cv::imwrite(filePath, image);
 }
 
+//para abrir el folder de Guardadso
+void openSavedImagesFolder() {
+    std::string folderPath = "C:\\Users\\alexa\\source\\repos\\opencv\\opencv\\Imagenes\\Mis Guardados";
+    ShellExecuteA(nullptr, "open", folderPath.c_str(), nullptr, nullptr, SW_SHOW);
+}
 
 sf::Texture loadImage(const cv::Mat& image) {
     sf::Texture texture;
@@ -235,6 +240,7 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                     // busca las coordenadas del mouse en la ventana
                     sf::Vector2f mousePos = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
 
+                    //BOTON SUBIR
                     if (subirImagenButton.first.getGlobalBounds().contains(mousePos)) {
                         // aqui se le agrega una ventana para subir la imagen que quiere el usuario
                         sf::RenderWindow* subirImagen = createTab();
@@ -370,6 +376,8 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         }
 
                     }
+
+                    //BOTON BUSCAR
                     else if (buscarButton.first.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Clic a boton Buscar." << std::endl;
                         // aqui se le agrega una ventana para buscar la imagen que quiere el usuario
@@ -783,11 +791,53 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                         }
                     }
 
+                    //BOTON GUARDADOS
                     else if (guardadosButton.first.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Clic a boton Guardados." << std::endl;
-                        // aqui se le agrega una ventana donde se muestren las imagenes que ya ha guardado el usuario anteriormente
+                        
+                        sf::RenderWindow* imagenesGuardadas = createTab();
+                        
+                        auto verImagenes = agregarBotonRect({ 206.4, 344.8 }, { 243.2, 78.5 }, " ", font);
+
+                        //imagen de fondo 
+                        sf::Texture guardadosTexture;
+                        if (!guardadosTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\guardados.png")) { //aqui va el path a la imagen
+                            std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+                        }
+                        sf::Sprite guardadosSprite(guardadosTexture);
+
+                        while (imagenesGuardadas->isOpen()) {
+                            
+                            sf::Event guardadosAbierto;
+
+                            while (imagenesGuardadas->pollEvent(guardadosAbierto)) {
+                                if (guardadosAbierto.type == sf::Event::Closed) {
+                                    imagenesGuardadas->close();
+                                }
+
+                                if (guardadosAbierto.type == sf::Event::MouseButtonPressed &&
+                                    guardadosAbierto.mouseButton.button == sf::Mouse::Left) {
+                                    sf::Vector2f mouseClickPos(guardadosAbierto.mouseButton.x, guardadosAbierto.mouseButton.y);
+
+                                    //boton de ver imagenes
+                                    if (verImagenes.first.getGlobalBounds().contains(mouseClickPos)) {
+                                        openSavedImagesFolder();
+                                    }
+                                }
+                            }
+
+                            imagenesGuardadas->clear(sf::Color::White);
+                            imagenesGuardadas->draw(guardadosSprite);
+
+                            imagenesGuardadas->draw(verImagenes.first);
+                            imagenesGuardadas->draw(verImagenes.second);
+
+                            imagenesGuardadas->display();
+                        }
+
                     }
 
+                    //BOTON AYUDA
                     else if (ayudaButton.first.getGlobalBounds().contains(mousePos)) {
                         std::cout << "Clic a boton Ayuda." << std::endl;
                         // aqui se le agrega una ventana para buscar la imagen que quiere el usuario
@@ -836,6 +886,8 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                             ayudaImagen->display();
                         }
                     }
+
+
                     else {
                         mostrarMensaje = false;
                     }

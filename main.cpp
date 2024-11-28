@@ -80,7 +80,7 @@ public:
     // insertar un hash en la tabla
     void insert(unsigned long long hashValue) {
         int index = hashValue % TABLE_SIZE;
-        table[index].push_back(hashValue);  // aÃ±adir a la lista en esa posicion
+        table[index].push_back(hashValue);  // añadir a la lista en esa posicion
     }
 
     // buscar un hash en la tabla
@@ -98,7 +98,7 @@ public:
 // iniciar la base de datos 
 vector<ImageEntry> DatabaseImage() {
     vector<ImageEntry> database;
-    for (int i = 1; i < 16; ++i) { // cambia el tamaÃ±o de la base aqui
+    for (int i = 1; i < 16; ++i) { // cambia el tamaño de la base aqui
         string path = "C:\\Users\\alexa\\source\\repos\\opencv\\opencv\\Imagenes\\IMG" + to_string(i) + ".jpg";
         unsigned long long hash = improvedImageHash(path); // crea el hash de las imagenes de la base de datos
         if (hash != 0) {
@@ -144,14 +144,14 @@ int main() {
         int numSimilarImages = min(3, static_cast<int>(similarImages.size()));
 
         if (numSimilarImages > 0) {
-            cout << "Se encontraron " << numSimilarImages << " imÃ¡genes similares:" << endl;
+            cout << "Se encontraron " << numSimilarImages << " imágenes similares:" << endl;
             for (int i = 0; i < numSimilarImages; ++i) {
                 cout << "Imagen similar: " << similarImages[i].second
                     << " Distancia de Hamming: " << similarImages[i].first << endl;
             }
         }
         else {
-            cout << "No se encontraron imÃ¡genes similares en la base de datos." << endl;
+            cout << "No se encontraron imágenes similares en la base de datos." << endl;
         }
     }
     else {
