@@ -1,3 +1,4 @@
+#include "interface.h"
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <vector>
@@ -13,7 +14,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 
-#include "interface.h"
+
 
 using namespace cv;
 using namespace std;
@@ -21,11 +22,6 @@ using namespace std;
 namespace fs = std::filesystem;
 
 const int TABLE_SIZE = 10007;  // num primo grande para la tabla hash
-
-struct ImageEntry {
-    string path;
-    unsigned long long hash;
-};
 
 // funcion para generar un hash
 unsigned long long improvedImageHash(const string& imagePath) {
@@ -112,7 +108,7 @@ vector<ImageEntry> DatabaseImage() {
     return database;
 }
 
-vector<ImageEntry> imageDatabase;
+std::vector<ImageEntry> imageDatabase;
 
 int main() {
     // vector para la base de datos 
