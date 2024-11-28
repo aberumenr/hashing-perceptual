@@ -7,7 +7,19 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
+#include <vector>
+#include <utility>
 
+struct ImageEntry {
+    std::string path;
+    unsigned long long hash;
+};
+
+extern std::vector<ImageEntry> imageDatabase;
+
+//las fucniones del hashing y comparacion de hashes
+unsigned long long improvedImageHash(const std::string& imagePath);
+int hammingDistance(unsigned long long hash1, unsigned long long hash2);
 
 sf::RenderWindow* createTab();
 void runInterface(const std::string& imagePath1, const std::string& imagePath2);
