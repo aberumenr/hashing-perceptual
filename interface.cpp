@@ -44,6 +44,19 @@ bool saveImageToFolder(const cv::Mat& image, const std::string& fileName) {
     return cv::imwrite(filePath, image);
 }
 
+//para folder Guardados
+bool likedImagesFolder(const cv::Mat& image, const std::string& fileName) {
+    std::string folderPath = "Mis Guardados";
+
+    //si no se ha creado el folder de imagenes, se crea
+    if (!fs::exists(folderPath)) {
+        fs::create_directory(folderPath);
+    }
+
+    std::string filePath = folderPath + "/" + fileName;
+    return cv::imwrite(filePath, image);
+}
+
 
 sf::Texture loadImage(const cv::Mat& image) {
     sf::Texture texture;
@@ -72,10 +85,10 @@ sf::Texture loadImage(const cv::Mat& image) {
         for (int x = 0; x < imageRGB.cols; ++x) {
             cv::Vec3b color = imageRGB.at<cv::Vec3b>(y, x);
             int index = (y * imageRGB.cols + x) * 4;
-            pixels[index] = color[0];      // Red
-            pixels[index + 1] = color[1];  // Green
-            pixels[index + 2] = color[2];  // Blue
-            pixels[index + 3] = 255;       // Alpha
+            pixels[index] = color[0];      
+            pixels[index + 1] = color[1];  
+            pixels[index + 2] = color[2];  
+            pixels[index + 3] = 255;       
         }
     }
 
@@ -393,22 +406,22 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                         selectedImagePath = openFolder(folderPath);
                                         if (!selectedImagePath.empty()) {
                                             std::cout << "Archivo seleccionado: " << selectedImagePath << std::endl;
-                                            /*// Calculate the hash of the selected image
+                                            //calcular hash de la imagen q eligio el usuario
                                             unsigned long long selectedImageHash = improvedImageHash(selectedImagePath);
 
                                             if (selectedImageHash != 0) {
                                                 std::cout << "Hash de la imagen seleccionada: " << std::hex << selectedImageHash << std::endl;
 
-                                                // Compare the hash with the database
+                                                //se compara con la base de datos
                                                 std::vector<std::pair<int, std::string>> similarImages;
                                                 for (const auto& entry : imageDatabase) {
                                                     int distancia = hammingDistance(selectedImageHash, entry.hash);
-                                                    if (distancia < 20) { // Similarity threshold
+
+                                                    if (distancia < 30) { //que tan similares
                                                         similarImages.emplace_back(distancia, entry.path);
                                                     }
                                                 }
 
-                                                // Sort and display the similar images
                                                 std::sort(similarImages.begin(), similarImages.end());
                                                 int numSimilarImages = std::min(3, static_cast<int>(similarImages.size()));
 
@@ -416,16 +429,337 @@ void runInterface(const std::string& imagePath1, const std::string& imagePath2) 
                                                     std::cout << "Se encontraron " << numSimilarImages << " imágenes similares:" << std::endl;
                                                     for (int i = 0; i < numSimilarImages; ++i) {
                                                         std::cout << "Imagen similar: " << similarImages[i].second
-                                                            << " Distancia de Hamming: " << similarImages[i].first << std::endl;
+                                                                  << " Distancia de Hamming: " << similarImages[i].first << std::endl;
+                                                    }
+
+                                                    //se imprimen de acuerdo a cuantas se encontraron
+
+                                                    //UN RESULTADO
+                                                    if (numSimilarImages == 1) {
+                                                        std::cout << "Imagen similar: " << similarImages[0].second
+                                                            << " Distancia de Hamming: " << similarImages[0].first << std::endl;
+
+                                                        // aqui se le agrega una ventana ver resultados 
+                                                        sf::RenderWindow* UnResultado = createTab();
+
+                                                        //imagen de fondo 
+                                                        sf::Texture UnResultadoTexture;
+                                                        if (!UnResultadoTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\1resultado.png")) { //aqui va el path a la imagen
+                                                            std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+                                                        }
+                                                        sf::Sprite UnResultadoSprite(UnResultadoTexture);
+
+                                                        //cargar imagen
+                                                        cv::Mat image = cv::imread(similarImages[0].second);
+                                                        sf::Texture foto1textura;
+                                                        if (!image.empty()) {
+                                                            foto1textura = loadImage(image);
+                                                        } else {
+                                                            std::cerr << "Error al cargar la imagen: " << similarImages[0].second << std::endl;
+                                                        }
+                                                        sf::Sprite foto1sprite(foto1textura);
+                                                        //para que quepa en el cubito
+                                                        float desiredWidth = 375; //ancho
+                                                        float desiredHeight = 375; //alto
+
+                                                        //dimensiones acrtuales
+                                                        sf::Vector2u textureSize = foto1textura.getSize();
+                                                        float currentWidth = static_cast<float>(textureSize.x);
+                                                        float currentHeight = static_cast<float>(textureSize.y);
+
+                                                        //escalar
+                                                        float scaleX = desiredWidth / currentWidth;
+                                                        float scaleY = desiredHeight / currentHeight;
+                                                        foto1sprite.setScale(scaleX, scaleY);
+                                                        foto1sprite.setPosition(495.6, 246.5);
+
+                                                        //boton guardar imagen
+                                                        auto saveButton = agregarBotonRect({ 627.9, 638.3 }, { 110.2, 26.7 }, "", font);
+
+                                                        while (UnResultado->isOpen()) {
+                                                            sf::Event UnResultadoAbierto;
+                                                            while (UnResultado->pollEvent(UnResultadoAbierto)) {
+                                                                if (UnResultadoAbierto.type == sf::Event::Closed) {
+                                                                    UnResultado->close();
+                                                                }
+                                                                if (UnResultadoAbierto.type == sf::Event::MouseButtonPressed &&
+                                                                    UnResultadoAbierto.mouseButton.button == sf::Mouse::Left) {
+                                                                    sf::Vector2f mouseClickPos(UnResultadoAbierto.mouseButton.x, UnResultadoAbierto.mouseButton.y);
+
+                                                                    if (saveButton.first.getGlobalBounds().contains(mouseClickPos)) {
+                                                                        //aqui deberia ir lo que se necesita para guardar el path de la imagen
+                                                                        std::cout << "Ruta de la imagen guardada: " << similarImages[0].second << std::endl;
+
+                                                                        cv::Mat image = cv::imread(similarImages[0].second);
+
+                                                                        //nombre del archivo desde el filea pth
+                                                                        std::filesystem::path sourcePath(similarImages[0].second);
+                                                                        std::string fileName = sourcePath.filename().string();
+
+                                                                        if (likedImagesFolder(image, fileName)) {
+                                                                            std::cout << "Imagen guardada en la carpeta 'Mis Guardados' con el nombre: " << fileName << std::endl;
+                                                                        }
+                                                                        else {
+                                                                            std::cerr << "Error al guardar la imagen: " << fileName << std::endl;
+                                                                        }
+                                                                    }
+
+                                                                }
+                                                            }
+                                                            //se dibuja todo
+                                                            UnResultado->clear(sf::Color::White);          
+                                                            UnResultado->draw(UnResultadoSprite);  
+
+                                                            if (!image.empty()) {
+                                                                UnResultado->draw(foto1sprite);             
+                                                            }
+
+                                                            UnResultado->draw(saveButton.first);             
+                                                            UnResultado->draw(saveButton.second);    
+
+                                                            UnResultado->display();
+                                                        }
+                                                        delete UnResultado; //se libera la memorai
+                                                    }
+
+                                                    //DOS RESULTADOS 
+                                                    else if (numSimilarImages == 2) {
+                                                        //ventana
+                                                        sf::RenderWindow* DosResultados = createTab();
+
+                                                        //fondo
+                                                        sf::Texture DosResultadosTexture;
+                                                        if (!DosResultadosTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\2resultados.png")) { //aqui va el path a la imagen
+                                                            std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+                                                        }
+                                                        sf::Sprite DosResultadosSprite(DosResultadosTexture);
+
+                                                        //sprites de las fotos
+                                                        std::vector<sf::Sprite> imageSprites;
+                                                        std::vector<std::unique_ptr<sf::Texture>> imageTextures;
+
+                                                        for (int i = 0; i < 2; ++i) {
+                                                            //cargar imagenes
+                                                            cv::Mat image = cv::imread(similarImages[i].second);
+                                                            if (!image.empty()) {
+                                                                auto texture = std::make_unique<sf::Texture>(loadImage(image));
+                                                                if (texture->getSize().x == 0 || texture->getSize().y == 0) {
+                                                                    std::cerr << "Error al convertir la imagen a textura: " << similarImages[i].second << std::endl;
+                                                                    continue;
+                                                                }
+
+                                                                //escalarlos
+                                                                sf::Sprite sprite(*texture);
+                                                                float desiredWidth = 375; //ancho
+                                                                float desiredHeight = 375; //alto
+                                                                sf::Vector2u textureSize = texture->getSize();
+                                                                float currentWidth = static_cast<float>(textureSize.x);
+                                                                float currentHeight = static_cast<float>(textureSize.y);
+                                                                float scaleX = desiredWidth / currentWidth;
+                                                                float scaleY = desiredHeight / currentHeight;
+                                                                sprite.setScale(scaleX, scaleY);
+
+                                                                //posiciones
+                                                                if (i == 0) {
+                                                                    sprite.setPosition(254.9, 290.8); //primera foto
+                                                                }
+                                                                else {
+                                                                    sprite.setPosition(736.3, 290.8); //segunda
+                                                                }
+
+                                                                imageSprites.push_back(sprite);
+                                                                imageTextures.push_back(std::move(texture));
+                                                            }
+                                                            else {
+                                                                std::cerr << "Error al cargar la imagen: " << similarImages[i].second << std::endl;
+                                                            }
+                                                        }
+
+                                                        //botones
+                                                        std::vector<std::pair<sf::RectangleShape, sf::Text>> saveButtons;
+                                                        for (int i = 0; i < 2; ++i) {
+                                                            //´para la primer foto
+                                                            if (i == 0) {
+                                                                saveButtons.push_back(agregarBotonRect({ 387.2, 682.6 }, { 110.2, 26.7 }, " ", font));
+                                                            }
+                                                            else {
+                                                                saveButtons.push_back(agregarBotonRect({ 868.6, 682.6 }, { 110.2, 26.7 }, " ", font));
+                                                            }
+                                                        }
+
+                                                        while (DosResultados->isOpen()) {
+                                                            sf::Event DosResultadosAbierto;
+                                                            while (DosResultados->pollEvent(DosResultadosAbierto)) {
+                                                                if (DosResultadosAbierto.type == sf::Event::Closed) {
+                                                                    DosResultados->close();
+                                                                }
+                                                                if (DosResultadosAbierto.type == sf::Event::MouseButtonPressed &&
+                                                                    DosResultadosAbierto.mouseButton.button == sf::Mouse::Left) {
+                                                                    sf::Vector2f mouseClickPos(DosResultadosAbierto.mouseButton.x, DosResultadosAbierto.mouseButton.y);
+
+                                                                    for (int i = 0; i < 2; ++i) {
+                                                                        if (saveButtons[i].first.getGlobalBounds().contains(mouseClickPos)) {
+                                                                            //aqui va q se guardan
+                                                                            std::cout << "Ruta de la imagen guardada: " << similarImages[i].second << std::endl;
+
+                                                                            cv::Mat image = cv::imread(similarImages[i].second);
+
+                                                                            //nombre del archivo desde el filea pth
+                                                                            std::filesystem::path sourcePath(similarImages[i].second);
+                                                                            std::string fileName = sourcePath.filename().string();
+
+                                                                            if (likedImagesFolder(image, fileName)) {
+                                                                                std::cout << "Imagen guardada en la carpeta 'Mis Guardados' con el nombre: " << fileName << std::endl;
+                                                                            }
+                                                                            else {
+                                                                                std::cerr << "Error al guardar la imagen: " << fileName << std::endl;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            //dibujar todo
+                                                            DosResultados->clear(sf::Color::White);           
+                                                            DosResultados->draw(DosResultadosSprite); 
+
+                                                            //dibujar gotos
+                                                            for (auto& sprite : imageSprites) {
+                                                                DosResultados->draw(sprite);                
+                                                            }
+
+                                                            for (auto& button : saveButtons) {
+                                                                DosResultados->draw(button.first);          
+                                                                DosResultados->draw(button.second);        
+                                                            }
+
+                                                            DosResultados->display();                    
+                                                        }
+                                                        delete DosResultados; 
+                                                    }
+
+                                                    //TRES RESULTADOS
+                                                    else { //para 3 o mas
+                                                        sf::RenderWindow* TresResultados = createTab();
+
+                                                        sf::Texture TresResultadosTexture;
+                                                        if (!TresResultadosTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\3resultados.png")) { // Fondo para 3 resultados
+                                                            std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+                                                        }
+                                                        sf::Sprite TresResultadosSprite(TresResultadosTexture);
+
+                                                        std::vector<sf::Sprite> imageSprites;
+                                                        std::vector<std::unique_ptr<sf::Texture>> imageTextures;
+
+                                                        for (int i = 0; i < 3; ++i) { // solo mostramos las 3 mas parecidas
+                                                            cv::Mat image = cv::imread(similarImages[i].second);
+                                                            if (!image.empty()) {
+                                                                auto texture = std::make_unique<sf::Texture>(loadImage(image));
+                                                                if (texture->getSize().x == 0 || texture->getSize().y == 0) {
+                                                                    std::cerr << "Error al convertir la imagen a textura: " << similarImages[i].second << std::endl;
+                                                                    continue;
+                                                                }
+
+                                                                sf::Sprite sprite(*texture);
+                                                                float desiredWidth = 375;
+                                                                float desiredHeight = 375; 
+                                                                sf::Vector2u textureSize = texture->getSize();
+                                                                float currentWidth = static_cast<float>(textureSize.x);
+                                                                float currentHeight = static_cast<float>(textureSize.y);
+                                                                float scaleX = desiredWidth / currentWidth;
+                                                                float scaleY = desiredHeight / currentHeight;
+                                                                sprite.setScale(scaleX, scaleY);
+
+                                                                if (i == 0) {
+                                                                    sprite.setPosition(76.9, 249.1); //primera foto
+                                                                }
+                                                                else if (i == 1) {
+                                                                    sprite.setPosition(495.5, 249.1); //segunda
+                                                                }
+                                                                else {
+                                                                    sprite.setPosition(914.3, 249.1); //tercera
+                                                                }
+
+                                                                imageSprites.push_back(sprite);
+                                                                imageTextures.push_back(std::move(texture));
+                                                            }
+                                                            else {
+                                                                std::cerr << "Error al cargar la imagen: " << similarImages[i].second << std::endl;
+                                                            }
+                                                        }
+
+                                                        //botones
+                                                        std::vector<std::pair<sf::RectangleShape, sf::Text>> saveButtons;
+                                                        for (int i = 0; i < 3; ++i) {
+                                                            if (i == 0) {
+                                                                saveButtons.push_back(agregarBotonRect({ 209.2, 650 }, { 110.2, 26.7 }, " ", font));
+                                                            }
+                                                            else if (i == 1) {
+                                                                saveButtons.push_back(agregarBotonRect({ 627.8, 650 }, { 110.2, 26.7 }, " ", font));
+                                                            }
+                                                            else {
+                                                                saveButtons.push_back(agregarBotonRect({ 1046.6, 650 }, { 110.2, 26.7 }, " ", font));
+                                                            }
+                                                        }
+
+                                                        while (TresResultados->isOpen()) {
+                                                            sf::Event TresResultadosAbierto;
+                                                            while (TresResultados->pollEvent(TresResultadosAbierto)) {
+                                                                if (TresResultadosAbierto.type == sf::Event::Closed) {
+                                                                    TresResultados->close();
+                                                                }
+                                                                if (TresResultadosAbierto.type == sf::Event::MouseButtonPressed &&
+                                                                    TresResultadosAbierto.mouseButton.button == sf::Mouse::Left) {
+                                                                    sf::Vector2f mouseClickPos(TresResultadosAbierto.mouseButton.x, TresResultadosAbierto.mouseButton.y);
+
+                                                                    for (int i = 0; i < 3; ++i) {
+                                                                        if (saveButtons[i].first.getGlobalBounds().contains(mouseClickPos)) {
+                                                                            //guaradr
+                                                                            std::cout << "Ruta de la imagen guardada: " << similarImages[i].second << std::endl;
+
+                                                                            cv::Mat image = cv::imread(similarImages[i].second);
+
+                                                                            //nombre del archivo desde el filea pth
+                                                                            std::filesystem::path sourcePath(similarImages[i].second);
+                                                                            std::string fileName = sourcePath.filename().string();
+
+                                                                            if (likedImagesFolder(image, fileName)) {
+                                                                                std::cout << "Imagen guardada en la carpeta 'Mis Guardados' con el nombre: " << fileName << std::endl;
+                                                                            }
+                                                                            else {
+                                                                                std::cerr << "Error al guardar la imagen: " << fileName << std::endl;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            TresResultados->clear(sf::Color::White);           
+                                                            TresResultados->draw(TresResultadosSprite);       
+
+                                                            for (auto& sprite : imageSprites) {
+                                                                TresResultados->draw(sprite);                
+                                                            }
+
+                                                            for (auto& button : saveButtons) {
+                                                                TresResultados->draw(button.first);          
+                                                                TresResultados->draw(button.second);        
+                                                            }
+                                                            TresResultados->display();               
+                                                        }
+                                                        delete TresResultados; 
                                                     }
                                                 }
                                                 else {
                                                     std::cout << "No se encontraron imágenes similares." << std::endl;
+                                                    if (!buscarTexture.loadFromFile("C:\\Users\\alexa\\OneDrive\\Documents\\hashing perceptual de imagenes\\sinResultados.png")) { //aqui va el path a la imagen
+                                                        std::cerr << "Error: No se pudo cargar la imagen de fondo." << std::endl;
+                                                    }
+                                                    buscarImagen->draw(buscarSprite);
                                                 }
                                             }
                                             else {
                                                 std::cerr << "Error al calcular el hash de la imagen seleccionada." << std::endl;
-                                            }*/
+                                            }
                                         }
                                         else {
                                             std::cout << "No se selecciono ningun archivo." << std::endl;
