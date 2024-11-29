@@ -2,7 +2,6 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <vector>
-#include <list>
 #include <cmath>
 #include <SFML/Graphics.hpp>
 #include <filesystem>
@@ -70,35 +69,11 @@ int hammingDistance(unsigned long long hash1, unsigned long long hash2) {
     return distancia;
 }
 
-// clase para la tabla hash, previene colisiones de hashing por chaining
-class HashTable {
-    vector<list<unsigned long long>> table;
-
-public:
-    HashTable(int size) : table(size) {}
-
-    // insertar un hash en la tabla
-    void insert(unsigned long long hashValue) {
-        int index = hashValue % TABLE_SIZE;
-        table[index].push_back(hashValue);  // añadir a la lista en esa posicion
-    }
-
-    // buscar un hash en la tabla
-    bool search(unsigned long long hashValue) {
-        int index = hashValue % TABLE_SIZE;
-        for (auto& h : table[index]) {
-            if (h == hashValue) {
-                return true;  // hash encontrado
-            }
-        }
-        return false;  // no encontrado
-    }
-};
 
 // iniciar la base de datos 
 vector<ImageEntry> DatabaseImage() {
     vector<ImageEntry> database;
-    for (int i = 1; i < 16; ++i) { // cambia el tamaño de la base aqui
+    for (int i = 1; i < 16; ++i) { // cambia el tamaÃ±o de la base aqui
         string path = "C:\\Users\\alexa\\source\\repos\\opencv\\opencv\\Imagenes\\IMG" + to_string(i) + ".jpg";
         unsigned long long hash = improvedImageHash(path); // crea el hash de las imagenes de la base de datos
         if (hash != 0) {
@@ -113,12 +88,6 @@ std::vector<ImageEntry> imageDatabase;
 int main() {
     // vector para la base de datos 
     imageDatabase = DatabaseImage();
-
-    // crear la tabla hash y agregar hashes de las imagenes de la base de datos
-    HashTable hashTable(TABLE_SIZE);
-    for (const auto& entry : imageDatabase) {
-        hashTable.insert(entry.hash);
-    }
 
     // hash de imagen cargada por el usuario
     string userImagePath = "C:\\Users\\alexa\\OneDrive\\Pictures\\Roblox\\RobloxScreenShot20231218_204242323.png";
@@ -144,14 +113,14 @@ int main() {
         int numSimilarImages = min(3, static_cast<int>(similarImages.size()));
 
         if (numSimilarImages > 0) {
-            cout << "Se encontraron " << numSimilarImages << " imágenes similares:" << endl;
+            cout << "Se encontraron " << numSimilarImages << " imÃ¡genes similares:" << endl;
             for (int i = 0; i < numSimilarImages; ++i) {
                 cout << "Imagen similar: " << similarImages[i].second
                     << " Distancia de Hamming: " << similarImages[i].first << endl;
             }
         }
         else {
-            cout << "No se encontraron imágenes similares en la base de datos." << endl;
+            cout << "No se encontraron imÃ¡genes similares en la base de datos." << endl;
         }
     }
     else {
